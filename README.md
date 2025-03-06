@@ -8,14 +8,14 @@
 
   <p align="center">
     <br />
-    <a href="https://github.com/othneildrew/Best-README-Template"><strong>探索文档 »</strong></a>
+    <a href="https://github.com/TrifingZW/SingularisInteraction/wiki"><strong>探索文档 »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/othneildrew/Best-README-Template">查看演示</a>
+    <a href="https://github.com/TrifingZW/SingularisInteraction">查看演示</a>
     &middot;
-    <a href="https://github.com/othneildrew/Best-README-Template/issues/new?labels=bug&template=bug-report---.md">报告错误</a>
+    <a href="https://github.com/TrifingZW/SingularisInteraction/issues/new?labels=bug&template=bug-report---.md">报告错误</a>
     &middot;
-    <a href="https://github.com/othneildrew/Best-README-Template/issues/new?labels=enhancement&template=feature-request---.md">请求功能</a>
+    <a href="https://github.com/TrifingZW/SingularisInteraction/issues/new?labels=enhancement&template=feature-request---.md">请求功能</a>
   </p>
 </div>
 
@@ -37,6 +37,42 @@
 <a href="https://www.reddit.com/r/pickrubbish/"><img src="https://img.shields.io/badge/Reddit-FF4500?style=for-the-badge&logo=reddit&logoColor=white" alt="Reddit"></a>
 <a href="https://www.facebook.com/pickrubbish/"><img src="https://img.shields.io/badge/Facebook-1877F2?style=for-the-badge&logo=facebook&logoColor=white" alt="Facebook"></a>
 </p>
+
+## 关于项目
+
+Fab上有许多交互插件，但大多数都依赖于蓝图，这使得它们在运行时性能上存在一定的损耗，并且大多过于厚重，所以我创建了这个插件，使用C++编写，旨在提供一个轻量级的交互插件，具有零运行时性能损耗，且蓝图友好。
+
+## 技术栈
+
+[![UnrealEngine][UnrealEngine-Shield]][UnrealEngine-Url]
+[![.Net][.Net-Shield]][.Net-Url]
+[![Cmake][Cmake-Shield]][Cmake-Url]
+[![Csharp][Csharp-Shield]][Csharp-Url]
+[![Cpp][Cpp-Shield]][Cpp-Url]
+[![Rider][Rider-Shield]][Rider-Url]
+[![Windows][Windows-Shield]][Windows-Url]
+[![Git][Git-Shield]][Git-Url]
+[![GitHub][GitHub-Shield]][GitHub-Url]
+
+## 开始
+
+这是一个安装和使用插件的简单示例，要了解更多信息，请查看 [Wiki](https://github.com/TrifingZW/PickRubbish/wiki)
+
+### 安装
+
+1. 前往 [Releases](https://github.com/TrifingZW/SingularisInteraction/releases) 下载最新版本的插件。
+2. 在文件管理器里转到虚幻引擎安装目录，并转到 `Engine/Plugins/Marketplace` 目录。
+3. 将下载的插件解压到 `Marketplace` 目录中。
+4. 在虚幻引擎编辑器中，转到 `编辑` > `插件`，然后在插件列表中找到 `SingularisInteraction` 插件并启用它。
+5. 重新启动虚幻引擎编辑器以使更改生效。
+
+### 使用
+
+1. 打开你的玩家控制器类，添加 `InteractionManager` 组件。
+2. 在 `InteractionManager` 组件的细节面板中，设置交互距离，并设置输入映射和输入（插件提供默认 IMC 和 IA）。
+3. 打开你的物品类，添加 `InteractionTarget` 组件。
+4. 运行游戏，视线在拥有 `InteractionTarget` 组件的物体上，按下交互键（默认是 `E`）。
+5. 关于可交互物体的高亮显示，请查看 [Wiki](https://github.com/TrifingZW/PickRubbish/wiki)
 
 ## 参与贡献
 
@@ -62,26 +98,38 @@
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[contributors-shield]: https://img.shields.io/github/contributors/TrifingZW/SingularisInteraction.svg?style=for-the-badge
+[.Net-Shield]: https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white
 
-[contributors-url]: https://github.com/TrifingZW/SingularisInteraction/graphs/contributors
+[.Net-Url]: https://dotnet.microsoft.com/
 
-[forks-shield]: https://img.shields.io/github/forks/TrifingZW/SingularisInteraction.svg?style=for-the-badge
+[Cmake-Shield]: https://img.shields.io/badge/CMake-%23008FBA.svg?style=for-the-badge&logo=cmake&logoColor=white
 
-[forks-url]: https://github.com/TrifingZW/SingularisInteraction/network/members
+[Cmake-Url]: https://cmake.org/
 
-[stars-shield]: https://img.shields.io/github/stars/TrifingZW/SingularisInteraction.svg?style=for-the-badge
+[UnrealEngine-Shield]: https://img.shields.io/badge/unrealengine-%23313131.svg?style=for-the-badge&logo=unrealengine&logoColor=white
 
-[stars-url]: https://github.com/TrifingZW/SingularisInteraction/stargazers
+[UnrealEngine-Url]: https://www.unrealengine.com/
 
-[issues-shield]: https://img.shields.io/github/issues/TrifingZW/SingularisInteraction.svg?style=for-the-badge
+[Csharp-Shield]: https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=csharp&logoColor=white
 
-[issues-url]: https://github.com/TrifingZW/SingularisInteraction/issues
+[Csharp-Url]:https://dotnet.microsoft.com/
 
-[license-shield]: https://img.shields.io/github/license/TrifingZW/SingularisInteraction.svg?style=for-the-badge
+[Cpp-Shield]: https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white
 
-[license-url]: https://github.com/TrifingZW/SingularisInteraction/blob/master/LICENSE.txt
+[Cpp-Url]:https://dotnet.microsoft.com/
 
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[Rider-Shield]: https://img.shields.io/badge/Rider-000000.svg?style=for-the-badge&logo=Rider&logoColor=white&color=black&labelColor=crimson
 
-[linkedin-url]: https://linkedin.com/in/othneildrew
+[Rider-Url]: https://www.jetbrains.com/rider/
+
+[Windows-Shield]: https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white
+
+[Windows-Url]: https://www.microsoft.com/zh-cn/windows
+
+[Git-Shield]: https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white
+
+[Git-Url]: https://git-scm.com/
+
+[GitHub-Shield]: https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white
+
+[GitHub-Url]: https://github.com/
