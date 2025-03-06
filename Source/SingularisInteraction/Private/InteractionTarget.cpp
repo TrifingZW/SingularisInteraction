@@ -1,4 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/* =====================================================================
+ * InteractionTarget.cpp
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * 
+ * Copyright (c) 2024 TrifingZW
+ * Licensed under MIT License
+ * ===================================================================== */
 
 #include "InteractionTarget.h"
 
@@ -11,12 +18,13 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 // 设置该组件属性的默认值
 UInteractionTarget::UInteractionTarget()
 {
-	/*PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = true;*/
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 
 	UInteractionWidgetComponent* InteractionWidgetComponent = CreateDefaultSubobject<UInteractionWidgetComponent>(TEXT("WidgetComponent"));
 	InteractionWidgetComponent->SetupAttachment(this);
@@ -60,16 +68,16 @@ void UInteractionTarget::BeginPlay()
 	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (const AController* Controller = PlayerPawn->GetController(); !PlayerPawn || !Controller)
 		InteractionManager = Controller->FindComponentByClass<UInteractionManager>();
-
-	// 调试绘制范围
-	if (DebugDraw)
-		DrawDebugRange(PromptRange);
 }
 
 // 每一帧调用
-void UInteractionTarget::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UInteractionTarget::TickComponent(const float DeltaTime, const ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// 调试绘制范围
+	if (DebugDraw)
+		DrawDebugRange(PromptRange, DebugDrawColor, 0.0f);
 }
 
 void UInteractionTarget::OnPlayersEnterPromptArea_Implementation(UPrimitiveComponent* OverlappedComponent,
@@ -93,8 +101,8 @@ void UInteractionTarget::OnPlayerLeavingPromptArea_Implementation(UPrimitiveComp
 void UInteractionTarget::OnPromptRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent,
                                                    AActor* OtherActor,
                                                    UPrimitiveComponent* OtherComp,
-                                                   int32 OtherBodyIndex,
-                                                   bool bFromSweep,
+                                                   const int32 OtherBodyIndex,
+                                                   const bool bFromSweep,
                                                    const FHitResult& SweepResult)
 {
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
@@ -106,7 +114,7 @@ void UInteractionTarget::OnPromptRangeBeginOverlap(UPrimitiveComponent* Overlapp
 void UInteractionTarget::OnPromptRangeEndOverlap(UPrimitiveComponent* OverlappedComponent,
                                                  AActor* OtherActor,
                                                  UPrimitiveComponent* OtherComp,
-                                                 int32 OtherBodyIndex)
+                                                 const int32 OtherBodyIndex)
 {
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
@@ -114,7 +122,7 @@ void UInteractionTarget::OnPromptRangeEndOverlap(UPrimitiveComponent* Overlapped
 				OnPlayerLeavingPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex);
 }
 
-void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent) const
+void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, const FColor Color, const float Duration) const
 {
 	if (!DebugShapeComponent || !GetWorld()) return;
 
@@ -126,20 +134,20 @@ void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent) co
 	{
 		const FVector Extent = BoxComponent->GetScaledBoxExtent();
 		// 绘制一个绿色的调试框
-		DrawDebugBox(GetWorld(), Center, Extent, Rotation, DebugDrawColor, true, -1.0f);
+		DrawDebugBox(GetWorld(), Center, Extent, Rotation, Color, false, Duration);
 	}
 	else if (const UCapsuleComponent* CapsuleComponent = Cast<UCapsuleComponent>(DebugShapeComponent))
 	{
 		const float HalfHeight = CapsuleComponent->GetScaledCapsuleHalfHeight();
 		const float Radius = CapsuleComponent->GetScaledCapsuleRadius();
 		// 绘制一个绿色的调试胶囊
-		DrawDebugCapsule(GetWorld(), Center, HalfHeight, Radius, Rotation, DebugDrawColor, true, -1.0f);
+		DrawDebugCapsule(GetWorld(), Center, HalfHeight, Radius, Rotation, Color, false, Duration);
 	}
 	else if (const USphereComponent* SphereComponent = Cast<USphereComponent>(DebugShapeComponent))
 	{
 		const float Radius = SphereComponent->GetScaledSphereRadius();
 		// 绘制一个绿色的调试球体
-		DrawDebugSphere(GetWorld(), Center, Radius, 12, DebugDrawColor, true, -1.0f);
+		DrawDebugSphere(GetWorld(), Center, Radius, 32, Color, false, Duration);
 	}
 	else
 	{
@@ -177,7 +185,8 @@ void UInteractionTarget::ExecuteInteraction_Implementation()
 void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
 {
 	// 显示高亮/UI提示
-	UE_LOG(LogTemp, Warning, TEXT("开始注视 %s"), *GetName());
+	if (DebugOutput)
+		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s"), *GetOwner()->GetName());
 	if (Highlight)
 		HighlightComponent->EnableHighlight();
 }
@@ -185,13 +194,16 @@ void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
 void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
 {
 	// 关闭高亮/提示
-	UE_LOG(LogTemp, Warning, TEXT("结束注视 %s"), *GetName());
+	if (DebugOutput)
+		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s"), *GetOwner()->GetName());
 	if (Highlight)
 		HighlightComponent->DisableHighlight();
 }
 
-void UInteractionTarget::OnInteract_Implementation(AActor* Interactor)
+void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value)
 {
 	// 处理交互逻辑
-	UE_LOG(LogTemp, Warning, TEXT("与 %s 交互"), *GetName());
+	if (DebugOutput)
+		UE_LOG(LogTemp, Warning, TEXT("与 %s 交互"), *GetOwner()->GetName());
+	OnInteraction.Broadcast(Interactor, Value);
 }

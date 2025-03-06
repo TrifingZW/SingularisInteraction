@@ -1,4 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/* =====================================================================
+ * InteractionManager.cpp
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * 
+ * Copyright (c) 2024 TrifingZW
+ * Licensed under MIT License
+ * ===================================================================== */
 
 #include "InteractionManager.h"
 
@@ -149,5 +156,5 @@ void UInteractionManager::BindInput()
 void UInteractionManager::HandleInput(const FInputActionValue& Value)
 {
 	if (CurrentInteractable.GetInterface())
-		CurrentInteractable->Execute_OnInteract(CurrentInteractable.GetObject(), GetOwner());
+		CurrentInteractable->Execute_OnInteract(CurrentInteractable.GetObject(), GetOwner(), Value);
 }

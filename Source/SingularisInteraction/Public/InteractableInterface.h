@@ -1,10 +1,19 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/* =====================================================================
+ * InteractableInterface.h
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * 
+ * Copyright (c) 2024 TrifingZW
+ * Licensed under MIT License
+ * ===================================================================== */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "InteractableInterface.generated.h"
+
+struct FInputActionValue;
 
 // 此类不需要修改
 UINTERFACE(MinimalAPI)
@@ -28,5 +37,5 @@ public:
 	void OnEndHover(AActor* Interactor);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Interaction")
-	void OnInteract(AActor* Interactor);
+	void OnInteract(AActor* Interactor,const FInputActionValue& Value);
 };

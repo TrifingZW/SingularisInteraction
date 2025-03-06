@@ -1,18 +1,32 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/* =====================================================================
+ * InteractionTarget.h
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * 
+ * Copyright (c) 2024 TrifingZW
+ * Licensed under MIT License
+ * ===================================================================== */
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "InteractableInterface.h"
-#include "Components/ActorComponent.h"
+#include "Components/SceneComponent.h"
+#include "Components/ShapeComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "InteractionTarget.generated.h"
 
 class UHighlightComponent;
 class UWidgetComponent;
 class UInteractionManager;
-class USphereComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractionSignature); // 声明动态多播委托
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+	FOnInteractionSignature,
+	AActor*,
+	Interactor,
+	const FInputActionValue&,
+	Value
+); // 声明动态多播委托
 
 UCLASS(ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent))
 class SINGULARISINTERACTION_API UInteractionTarget : public USceneComponent, public IInteractableInterface
@@ -47,6 +61,14 @@ public:
 			ToolTip = "物体出现在玩家视线范围内时触发高亮效果的颜色"
 		))
 	FColor HighlightColor = FColor::Yellow;*/
+
+	UPROPERTY(EditAnywhere,
+		Category = "交互选项",
+		meta = (
+			DisplayName = "调试输出",
+			ToolTip = "是否输出调试信息"
+		))
+	bool DebugOutput = false;
 
 	UPROPERTY(EditAnywhere,
 		Category = "交互选项",
@@ -91,7 +113,7 @@ public:
 			DisplayName = "交互时触发",
 			ToolTip = "当玩家与对象发生交互行为时触发此事件"
 		))
-	FOnInteractionSignature OnInteraction;
+	FOnInteractionSignature OnInteraction{};
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "交互选项")
@@ -151,7 +173,7 @@ private:
 	                             int32 OtherBodyIndex);
 
 	/** 调试绘制交互范围 */
-	void DrawDebugRange(UShapeComponent* DebugShapeComponent) const;
+	void DrawDebugRange(UShapeComponent* DebugShapeComponent, FColor Color, float Duration) const;
 
 	void AddWidgetToScreen();
 	void RemoveWidgetFromScreen();
@@ -159,5 +181,5 @@ private:
 public:
 	virtual void OnBeginHover_Implementation(AActor* Interactor) override;
 	virtual void OnEndHover_Implementation(AActor* Interactor) override;
-	virtual void OnInteract_Implementation(AActor* Interactor) override;
+	virtual void OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value) override;
 };

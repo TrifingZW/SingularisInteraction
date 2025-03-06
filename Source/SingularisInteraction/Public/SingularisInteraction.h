@@ -1,11 +1,19 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+/* =====================================================================
+ * SingularisInteraction.h
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * 
+ * Copyright (c) 2024 TrifingZW
+ * Licensed under MIT License
+ * ===================================================================== */
 
 #pragma once
 
-class FSingularisInteractionModule final : public IModuleInterface
+#include "Modules/ModuleManager.h" 
+
+class FSingularisInteractionModule : public IModuleInterface
 {
 public:
-
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;

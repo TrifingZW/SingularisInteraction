@@ -1,3 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/* =====================================================================
+ * InteractionWidgetComponent.cpp
+ * SPDX-License-Identifier: MIT
+ * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * 
+ * Copyright (c) 2024 TrifingZW
+ * Licensed under MIT License
+ * ===================================================================== */
 
 #include "InteractionWidgetComponent.h"
