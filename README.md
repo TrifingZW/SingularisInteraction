@@ -5,10 +5,10 @@
     <img src="Resources/Icon128.png" alt="Logo" width="80" height="80">
   </a>
 
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=50&duration=3000&pause=500&color=C191FF&center=true&vCenter=true&width=800&lines=🚀+基于+Unreal+Engine+5+的纯C%2B%2B交互插件;⚡+零运行时性能损耗;🎮+蓝图友好" alt="动态标题" />
+  <h1 align="center">SingularisInteraction</h1>
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=24&duration=3000&pause=500&color=C191FF&center=true&vCenter=true&width=800&lines=🚀+基于+Unreal+Engine+5+的纯C%2B%2B交互插件;⚡+零运行时性能损耗;🎮+蓝图友好" alt="动态标题" />
 
   <p align="center">
-    一个虚幻5交互插件
     <br />
     <a href="https://github.com/othneildrew/Best-README-Template"><strong>探索文档 »</strong></a>
     <br />
