@@ -1,6 +1,4 @@
 <div align="center">
-    <br />
-
   <a href="https://github.com/othneildrew/Best-README-Template">
     <img src="Resources/Icon128.png" alt="Logo" width="80" height="80">
   </a>
@@ -19,7 +17,6 @@
     &middot;
     <a href="https://github.com/othneildrew/Best-README-Template/issues/new?labels=enhancement&template=feature-request---.md">请求功能</a>
   </p>
-
 </div>
 
 
