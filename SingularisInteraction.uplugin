@@ -1,0 +1,27 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "SingularisInteraction",
+  "Description": "游戏中用于玩家和物体交互的插件",
+  "Category": "Interaction",
+  "CreatedBy": "TrifingZW",
+  "CreatedByURL": "",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "CanContainContent": true,
+  "IsBetaVersion": true,
+  "IsExperimentalVersion": false,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "SingularisInteraction",
+      "Type": "Runtime",
+      "LoadingPhase": "PostConfigInit",
+      "WritelistPlatforms": [
+        "Win64"
+      ]
+    }
+  ]
+}
