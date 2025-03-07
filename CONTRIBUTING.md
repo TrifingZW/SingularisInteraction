@@ -20,4 +20,4 @@
 
 ## 需要帮助？
 - 可讨论的议题请先发起 Issue
-- 联系维护者: your-email@example.com
+- 联系维护者: TrifingZW@gmail.com
