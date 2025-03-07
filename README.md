@@ -22,40 +22,28 @@
 
 
 <!-- 核心徽章 -->
-<p align="center">  
+<div align="center">  
 <a href="https://github.com/TrifingZW/SingularisInteraction/graphs/contributors"><img src="https://img.shields.io/github/contributors/TrifingZW/SingularisInteraction.svg?style=for-the-badge" alt="Contributors"></a>
 <a href="https://github.com/TrifingZW/SingularisInteraction/forks"><img src="https://img.shields.io/github/forks/TrifingZW/SingularisInteraction.svg?style=for-the-badge" alt="Forks"></a>
 <a href="https://github.com/TrifingZW/SingularisInteraction/stargazers"><img src="https://img.shields.io/github/stars/TrifingZW/SingularisInteraction.svg?style=for-the-badge" alt="Stargazers"></a>
 <a href="https://github.com/TrifingZW/SingularisInteraction/issues"><img src="https://img.shields.io/github/issues/TrifingZW/SingularisInteraction.svg?style=for-the-badge" alt="Issues"></a>
 <a href="https://github.com/TrifingZW/SingularisInteraction/blob/main/LICENSE"><img src="https://img.shields.io/github/license/TrifingZW/SingularisInteraction.svg?style=for-the-badge" alt="Unlicense License"></a>
-</p>
-<p align="center">  
+</div>
+<div align="center">  
 <a href="https://discord.gg/singularisinteraction"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
 <a href="https://twitter.com/singularisinteraction"><img src="https://img.shields.io/badge/twitter-000000?style=for-the-badge&logo=x&logoColor=white" alt="X (formally Twitter)"></a>
 <a href="https://www.youtube.com/c/singularisinteraction"><img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"></a>
 <a href="https://www.bilibili.com/singularisinteraction/"><img src="https://img.shields.io/badge/BiliBili-E4405F?style=for-the-badge&logo=bilibili&logoColor=white" alt="BiliBili"></a>
 <a href="https://www.reddit.com/r/singularisinteraction/"><img src="https://img.shields.io/badge/Reddit-FF4500?style=for-the-badge&logo=reddit&logoColor=white" alt="Reddit"></a>
 <a href="https://www.facebook.com/singularisinteraction/"><img src="https://img.shields.io/badge/Facebook-1877F2?style=for-the-badge&logo=facebook&logoColor=white" alt="Facebook"></a>
-</p>
-
+</div>
+<div align="center">
 <picture>
-  <source
-    media="(prefers-color-scheme: dark)"
-    srcset="
-      https://api.star-history.com/svg?repos=TrifingZW/SingularisInteraction&type=Date&theme=dark
-    "
-  />
-  <source
-    media="(prefers-color-scheme: light)"
-    srcset="
-      https://api.star-history.com/svg?repos=TrifingZW/SingularisInteraction&type=Date
-    "
-  />
-  <img
-    alt="Star History Chart"
-    src="https://api.star-history.com/svg?repos=TrifingZW/SingularisInteraction&type=Date"
-  />
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=TrifingZW/SingularisInteraction&type=Date&theme=dark" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=TrifingZW/SingularisInteraction&type=Date" />
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=star-history/star-history&type=Date" />
 </picture>
+</div>
 
 ## 关于项目
 
