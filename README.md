@@ -68,7 +68,7 @@
 ## 开始
 
 > [!IMPORTANT]
-> **这是一个安装和使用插件的简单示例，要了解更多信息，请查看 [Wiki](https://github.com/TrifingZW/PickRubbish/wiki)**
+> **这是一个安装和使用插件的简单示例，要了解更多信息，请查看 [Wiki](https://github.com/TrifingZW/SingularisInteraction/wiki)**
 >
 > ***如果遇到BUG欢迎提交 [Issue](https://github.com/TrifingZW/SingularisInteraction/issues)***
 
@@ -91,7 +91,7 @@
 2. 在 `InteractionManager` 组件的细节面板中，设置交互距离，并设置输入映射和输入（插件提供默认 IMC 和 IA）。
 3. 打开你的物品类，添加 `InteractionTarget` 组件。
 4. 运行游戏，视线在拥有 `InteractionTarget` 组件的物体上，按下交互键（默认是 `E`）。
-5. 关于可交互物体的高亮显示，请查看 **[Wiki](https://github.com/TrifingZW/PickRubbish/wiki)**
+5. 关于可交互物体的高亮显示，请查看 **[Wiki](https://github.com/TrifingZW/SingularisInteraction/wiki)**
 
 ## 参与贡献
 
