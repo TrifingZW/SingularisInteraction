@@ -34,6 +34,15 @@ class SINGULARISINTERACTION_API UInteractionTarget : public USceneComponent, pub
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintReadOnly, Category = "交互选项", meta=(EditHide))
+	UHighlightComponent* HighlightComponent = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, Category = "交互选项", meta=(EditHide))
+	UWidgetComponent* WidgetComponent = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, Category = "交互选项", meta=(EditHide))
+	UUserWidget* Widget = nullptr; // Widget 实例
+
 	UPROPERTY(EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互选项",
@@ -43,10 +52,8 @@ public:
 		))
 	FText PromptText = FText::FromString("PressEToInteract");
 
-	UPROPERTY(VisibleAnywhere, Category = "交互选项")
-	UHighlightComponent* HighlightComponent = nullptr;
-
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "轮廓高亮",
@@ -63,6 +70,7 @@ public:
 	FColor HighlightColor = FColor::Yellow;*/
 
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "调试输出",
@@ -71,6 +79,7 @@ public:
 	bool DebugOutput = false;
 
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "调试绘制",
@@ -79,6 +88,7 @@ public:
 	bool DebugDraw = false;
 
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "调试绘制颜色",
@@ -87,6 +97,7 @@ public:
 	FColor DebugDrawColor = FColor::Green;
 
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "提示范围",
@@ -95,15 +106,13 @@ public:
 	UShapeComponent* PromptRange = nullptr;
 
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "提示UI",
 			ToolTip = "要绘制的交互提示的UI类"
 		))
 	TSubclassOf<UUserWidget> PromptWidgetClass = nullptr;
-
-	UPROPERTY(VisibleAnywhere, Category = "交互选项")
-	UWidgetComponent* WidgetComponent = nullptr;
 
 	// 暴露给蓝图的事件调度器
 	UPROPERTY(
@@ -116,9 +125,6 @@ public:
 	FOnInteractionSignature OnInteraction{};
 
 private:
-	UPROPERTY(VisibleAnywhere, Category = "交互选项")
-	UUserWidget* Widget = nullptr; // Widget 实例
-
 	bool bCanInteract = false;
 	TWeakObjectPtr<UInteractionManager> InteractionManager = nullptr;
 

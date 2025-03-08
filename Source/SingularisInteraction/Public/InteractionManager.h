@@ -25,6 +25,7 @@ class SINGULARISINTERACTION_API UInteractionManager : public USceneComponent
 
 public:
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "交互距离",
@@ -34,7 +35,7 @@ public:
 
 	/** 交互 InputMappingContext */
 	UPROPERTY(EditAnywhere,
-		BlueprintReadOnly,
+		BlueprintReadWrite,
 		Category = Input,
 		meta = (
 			DisplayName = "交互IMC",
@@ -44,7 +45,7 @@ public:
 
 	/** 交互 InputAction */
 	UPROPERTY(EditAnywhere,
-		BlueprintReadOnly,
+		BlueprintReadWrite,
 		Category = Input,
 		meta = (
 			DisplayName = "交互IA",
@@ -53,6 +54,7 @@ public:
 	UInputAction* InteractiveInputAction = nullptr;
 
 	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
 		Category = "Input",
 		meta = (
 			DisplayName = "输入优先级",
