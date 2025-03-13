@@ -13,9 +13,9 @@
 #include "Components/SceneComponent.h"
 #include "InteractionManager.generated.h"
 
+class UInteractionTarget;
 class UInputMappingContext;
 class UInputAction;
-class IInteractableInterface;
 struct FInputActionValue;
 
 UCLASS(ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent, AllowedClasses="/Script/Engine.PlayerController"))
@@ -78,10 +78,17 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	UPROPERTY()
-	TScriptInterface<IInteractableInterface> CurrentInteractable;
+	TWeakObjectPtr<UInteractionTarget> CurrentInteractionTarget;
 
 	void UpdateInteractionTarget();
+	TWeakObjectPtr<UInteractionTarget> FindBestInteractable(
+		const TArray<UInteractionTarget*>& Candidates,
+		const FVector& CameraLocation,
+		const FRotator& CameraRotation,
+		const FVector& HitLocation
+	) const;
 	void BindInput();
-	void HandleInput(const FInputActionValue& Value);
+	void HandleTriggered(const FInputActionValue& Value);
+	void HandleCompleted(const FInputActionValue& Value);
+	void HandleOngoing(const FInputActionValue& Value);
 };

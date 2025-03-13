@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "Modules/ModuleManager.h" 
+#include "Modules/ModuleManager.h"
 
 class FSingularisInteractionModule : public IModuleInterface
 {

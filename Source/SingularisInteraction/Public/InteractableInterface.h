@@ -37,5 +37,5 @@ public:
 	void OnEndHover(AActor* Interactor);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Interaction")
-	void OnInteract(AActor* Interactor,const FInputActionValue& Value);
+	void OnInteract(AActor* Interactor, const FInputActionValue& Value);
 };

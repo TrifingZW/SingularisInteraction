@@ -1,5 +1,5 @@
 /* =====================================================================
- * InteractionWidgetComponent.h
+ * InteractionConfig.h
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
  * 
@@ -7,17 +7,4 @@
  * Licensed under MIT License
  * ===================================================================== */
 
-#pragma once
-
-#include "CoreMinimal.h"
-#include "Components/WidgetComponent.h"
-#include "InteractionWidgetComponent.generated.h"
-
-/**
- * 
- */
-UCLASS()
-class SINGULARISINTERACTION_API UInteractionWidgetComponent : public UWidgetComponent
-{
-	GENERATED_BODY()
-};
+#include "InteractionConfig.h"

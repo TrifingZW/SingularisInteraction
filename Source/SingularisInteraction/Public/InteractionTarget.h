@@ -11,6 +11,8 @@
 
 #include "CoreMinimal.h"
 #include "InteractableInterface.h"
+#include "InteractionConfig.h"
+
 #include "Components/SceneComponent.h"
 #include "Components/ShapeComponent.h"
 #include "Blueprint/UserWidget.h"
@@ -26,7 +28,35 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
 	Interactor,
 	const FInputActionValue&,
 	Value
-); // 声明动态多播委托
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(
+	FOnPlayersEnterPromptAreaSignature,
+	UPrimitiveComponent*,
+	OverlappedComponent,
+	APawn*,
+	Pawn,
+	UPrimitiveComponent*,
+	OtherComp,
+	int32,
+	OtherBodyIndex,
+	bool,
+	bFromSweep,
+	const FHitResult&,
+	SweepResult
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(
+	FOnPlayerLeavingPromptAreaSignature,
+	UPrimitiveComponent*,
+	OverlappedComponent,
+	APawn*,
+	Pawn,
+	UPrimitiveComponent*,
+	OtherComp,
+	int32,
+	OtherBodyIndex
+);
 
 UCLASS(ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent))
 class SINGULARISINTERACTION_API UInteractionTarget : public USceneComponent, public IInteractableInterface
@@ -47,17 +77,44 @@ public:
 		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
-			DisplayName = "交互提示",
-			ToolTip = "可以交互时显示的提示文字"
+			DisplayName = "交互标题",
+			ToolTip = "该交互的标题"
 		))
-	FText PromptText = FText::FromString("PressEToInteract");
+	FText InteractionTitle = FText::FromString(TEXT("物品拾取"));
+
+	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
+		Category = "交互选项",
+		meta = (
+			DisplayName = "交互配置",
+			ToolTip = "该交互的配置"
+		))
+	FInteractionConfig InteractionConfig{};
+
+	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
+		Category = "交互选项",
+		meta = (
+			DisplayName = "启用优先级",
+			ToolTip = "启用交互优先级"
+		))
+	bool UsePriority = false;
+
+	UPROPERTY(EditAnywhere,
+		BlueprintReadWrite,
+		Category = "交互选项",
+		meta = (
+			DisplayName = "交互优先级",
+			ToolTip = "当一个物体拥有多个交互目标组件时，优先级高的组件会被优先执行交互事件"
+		))
+	int32 InteractionPriority = 0;
 
 	UPROPERTY(EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "轮廓高亮",
-			ToolTip = "是否在物体出现在玩家视线范围内时触发高亮效果"
+			ToolTip = "是否在物体出现在玩家视线上时触发高亮效果"
 		))
 	bool Highlight = true;
 
@@ -65,7 +122,7 @@ public:
 		Category = "交互选项",
 		meta = (
 			DisplayName = "轮廓高亮颜色",
-			ToolTip = "物体出现在玩家视线范围内时触发高亮效果的颜色"
+			ToolTip = "物体出现在玩家视线上时触发高亮效果的颜色"
 		))
 	FColor HighlightColor = FColor::Yellow;*/
 
@@ -83,7 +140,7 @@ public:
 		Category = "交互选项",
 		meta = (
 			DisplayName = "调试绘制",
-			ToolTip = "是否绘制提示范围"
+			ToolTip = "是否绘制提示区域"
 		))
 	bool DebugDraw = false;
 
@@ -100,8 +157,8 @@ public:
 		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
-			DisplayName = "提示范围",
-			ToolTip = "如果玩家在此范围内会绘制交互提示UI"
+			DisplayName = "提示区域",
+			ToolTip = "如果玩家在此区域内会绘制交互提示UI"
 		))
 	UShapeComponent* PromptRange = nullptr;
 
@@ -122,7 +179,27 @@ public:
 			DisplayName = "交互时触发",
 			ToolTip = "当玩家与对象发生交互行为时触发此事件"
 		))
-	FOnInteractionSignature OnInteraction{};
+	FOnInteractionSignature OnInteractionEvent{};
+
+	// 暴露给蓝图的事件调度器
+	UPROPERTY(
+		BlueprintAssignable,
+		Category = "交互事件",
+		meta = (
+			DisplayName = "玩家进入提示区域时触发",
+			ToolTip = "当玩家进入提示区域时触发此事件，提示区域参考交互选项的PromptRange"
+		))
+	FOnPlayersEnterPromptAreaSignature OnPlayersEnterPromptAreaEvent{};
+
+	// 暴露给蓝图的事件调度器
+	UPROPERTY(
+		BlueprintAssignable,
+		Category = "交互事件",
+		meta = (
+			DisplayName = "玩家离开提示区域时触发",
+			ToolTip = "当玩家离开提示区域时触发此事件，提示区域参考交互选项的PromptRange"
+		))
+	FOnPlayerLeavingPromptAreaSignature OnPlayerLeavingPromptAreaEvent{};
 
 private:
 	bool bCanInteract = false;
@@ -144,41 +221,44 @@ protected:
 	// 每一帧调用
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	/** 当玩家执行交互时触发 */
 	UFUNCTION(BlueprintNativeEvent, Category = "交互事件")
-	void ExecuteInteraction();
-	virtual void ExecuteInteraction_Implementation();
-
+	void OnPlayersEnterPromptArea(
+		UPrimitiveComponent* OverlappedComponent,
+		APawn* Pawn,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
 	UFUNCTION(BlueprintNativeEvent, Category = "交互事件")
-	void OnPlayersEnterPromptArea(UPrimitiveComponent* OverlappedComponent,
-	                              APawn* Pawn,
-	                              UPrimitiveComponent* OtherComp,
-	                              int32 OtherBodyIndex,
-	                              bool bFromSweep,
-	                              const FHitResult& SweepResult);
-	UFUNCTION(BlueprintNativeEvent, Category = "交互事件")
-	void OnPlayerLeavingPromptArea(UPrimitiveComponent* OverlappedComponent,
-	                               APawn* Pawn,
-	                               UPrimitiveComponent* OtherComp,
-	                               int32 OtherBodyIndex);
+	void OnPlayerLeavingPromptArea(
+		UPrimitiveComponent* OverlappedComponent,
+		APawn* Pawn,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
 
 private:
 	// 在外部开始重叠
 	UFUNCTION()
-	void OnPromptRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent,
-	                               AActor* OtherActor,
-	                               UPrimitiveComponent* OtherComp,
-	                               int32 OtherBodyIndex,
-	                               bool bFromSweep,
-	                               const FHitResult& SweepResult);
+	void OnPromptRangeBeginOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
 	// 在外部结束重叠
 	UFUNCTION()
-	void OnPromptRangeEndOverlap(UPrimitiveComponent* OverlappedComponent,
-	                             AActor* OtherActor,
-	                             UPrimitiveComponent* OtherComp,
-	                             int32 OtherBodyIndex);
+	void OnPromptRangeEndOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
 
-	/** 调试绘制交互范围 */
+	/** 调试绘制交互区域 */
 	void DrawDebugRange(UShapeComponent* DebugShapeComponent, FColor Color, float Duration) const;
 
 	void AddWidgetToScreen();

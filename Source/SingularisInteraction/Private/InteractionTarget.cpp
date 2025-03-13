@@ -47,14 +47,16 @@ void UInteractionTarget::OnRegister()
 }
 
 
-// 当游戏开始时调用v
+// 当游戏开始时调用
 void UInteractionTarget::BeginPlay()
 {
 	Super::BeginPlay();
 
 	// 设置 WidgetComponent 的 WidgetClass
 	if (PromptWidgetClass)
+	{
 		WidgetComponent->SetWidgetClass(PromptWidgetClass);
+	}
 
 	// 设置 PromptRange
 	if (PromptRange)
@@ -67,7 +69,9 @@ void UInteractionTarget::BeginPlay()
 	// 获取 InteractionManager
 	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (const AController* Controller = PlayerPawn->GetController(); !PlayerPawn || !Controller)
+	{
 		InteractionManager = Controller->FindComponentByClass<UInteractionManager>();
+	}
 }
 
 // 每一帧调用
@@ -77,33 +81,55 @@ void UInteractionTarget::TickComponent(const float DeltaTime, const ELevelTick T
 
 	// 调试绘制范围
 	if (DebugDraw)
+	{
 		DrawDebugRange(PromptRange, DebugDrawColor, 0.0f);
+	}
 }
 
-void UInteractionTarget::OnPlayersEnterPromptArea_Implementation(UPrimitiveComponent* OverlappedComponent,
-                                                                 APawn* Pawn,
-                                                                 UPrimitiveComponent* OtherComp,
-                                                                 int32 OtherBodyIndex,
-                                                                 bool bFromSweep,
-                                                                 const FHitResult& SweepResult)
+void UInteractionTarget::OnPlayersEnterPromptArea_Implementation(
+	UPrimitiveComponent* OverlappedComponent,
+	APawn* Pawn,
+	UPrimitiveComponent* OtherComp,
+	const int32 OtherBodyIndex,
+	const bool bFromSweep,
+	const FHitResult& SweepResult
+)
 {
 	WidgetComponent->SetVisibility(true);
+	OnPlayersEnterPromptAreaEvent.Broadcast(
+		OverlappedComponent,
+		Pawn,
+		OtherComp,
+		OtherBodyIndex,
+		bFromSweep,
+		SweepResult
+	);
 }
 
-void UInteractionTarget::OnPlayerLeavingPromptArea_Implementation(UPrimitiveComponent* OverlappedComponent,
-                                                                  APawn* Pawn,
-                                                                  UPrimitiveComponent* OtherComp,
-                                                                  int32 OtherBodyIndex)
+void UInteractionTarget::OnPlayerLeavingPromptArea_Implementation(
+	UPrimitiveComponent* OverlappedComponent,
+	APawn* Pawn,
+	UPrimitiveComponent* OtherComp,
+	const int32 OtherBodyIndex
+)
 {
 	WidgetComponent->SetVisibility(false);
+	OnPlayerLeavingPromptAreaEvent.Broadcast(
+		OverlappedComponent,
+		Pawn,
+		OtherComp,
+		OtherBodyIndex
+	);
 }
 
-void UInteractionTarget::OnPromptRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent,
-                                                   AActor* OtherActor,
-                                                   UPrimitiveComponent* OtherComp,
-                                                   const int32 OtherBodyIndex,
-                                                   const bool bFromSweep,
-                                                   const FHitResult& SweepResult)
+void UInteractionTarget::OnPromptRangeBeginOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	const int32 OtherBodyIndex,
+	const bool bFromSweep,
+	const FHitResult& SweepResult
+)
 {
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
@@ -111,10 +137,12 @@ void UInteractionTarget::OnPromptRangeBeginOverlap(UPrimitiveComponent* Overlapp
 				OnPlayersEnterPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
-void UInteractionTarget::OnPromptRangeEndOverlap(UPrimitiveComponent* OverlappedComponent,
-                                                 AActor* OtherActor,
-                                                 UPrimitiveComponent* OtherComp,
-                                                 const int32 OtherBodyIndex)
+void UInteractionTarget::OnPromptRangeEndOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	const int32 OtherBodyIndex
+)
 {
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
@@ -124,7 +152,10 @@ void UInteractionTarget::OnPromptRangeEndOverlap(UPrimitiveComponent* Overlapped
 
 void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, const FColor Color, const float Duration) const
 {
-	if (!DebugShapeComponent || !GetWorld()) return;
+	if (!DebugShapeComponent || !GetWorld())
+	{
+		return;
+	}
 
 	const FVector Center = DebugShapeComponent->GetComponentLocation();
 	const FQuat Rotation = DebugShapeComponent->GetComponentQuat();
@@ -165,7 +196,9 @@ void UInteractionTarget::AddWidgetToScreen()
 
 		// 添加到视口
 		if (Widget)
+		{
 			Widget->AddToViewport();
+		}
 	}
 }
 
@@ -178,15 +211,11 @@ void UInteractionTarget::RemoveWidgetFromScreen()
 	}
 }
 
-void UInteractionTarget::ExecuteInteraction_Implementation()
-{
-}
-
 void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
 {
 	// 显示高亮/UI提示
 	if (DebugOutput)
-		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s"), *GetOwner()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 	if (Highlight)
 		HighlightComponent->EnableHighlight();
 }
@@ -195,7 +224,7 @@ void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
 {
 	// 关闭高亮/提示
 	if (DebugOutput)
-		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s"), *GetOwner()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 	if (Highlight)
 		HighlightComponent->DisableHighlight();
 }
@@ -204,6 +233,6 @@ void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FIn
 {
 	// 处理交互逻辑
 	if (DebugOutput)
-		UE_LOG(LogTemp, Warning, TEXT("与 %s 交互"), *GetOwner()->GetName());
-	OnInteraction.Broadcast(Interactor, Value);
+		UE_LOG(LogTemp, Warning, TEXT("与 %s 的 %s 交互目标交互"), *GetOwner()->GetName(), *InteractionTitle.ToString());
+	OnInteractionEvent.Broadcast(Interactor, Value);
 }

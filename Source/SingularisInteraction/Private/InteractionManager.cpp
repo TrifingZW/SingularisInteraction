@@ -97,50 +97,105 @@ void UInteractionManager::UpdateInteractionTarget()
 	);
 
 	// 处理交互目标
-	TScriptInterface<IInteractableInterface> NewInteractable = nullptr;
+	TWeakObjectPtr<UInteractionTarget> NewInteractionTarget = nullptr;
 
 	if (bHit)
 	{
 		if (const AActor* HitActor = HitResult.GetActor())
 		{
-			// 同时检查组件存在性和接口有效性
-			if (UInteractionTarget* InteractionComponent = HitActor->FindComponentByClass<UInteractionTarget>())
-			{
-				// 自动验证接口有效性（TScriptInterface会处理）
-				NewInteractable = TScriptInterface<IInteractableInterface>(InteractionComponent);
+			// 获取所有交互组件
+			TArray<UInteractionTarget*> InteractionComponents;
+			HitActor->GetComponents(InteractionComponents);
 
-				// 显式验证接口有效性（如果引擎验证不够严格）
-				if (!NewInteractable.GetInterface())
-				{
-					NewInteractable = nullptr;
-				}
-			}
+			// 存在多个候选时进行智能选择
+			if (InteractionComponents.Num() > 0)
+				NewInteractionTarget = FindBestInteractable(
+					InteractionComponents,
+					CameraLoc,
+					CameraRot,
+					HitResult.Location
+				);
 		}
 	}
 
 	// 统一处理交互状态变化
-	if (NewInteractable != CurrentInteractable)
+	if (NewInteractionTarget != CurrentInteractionTarget)
 	{
 		// 退出旧交互
-		if (CurrentInteractable)
-		{
-			CurrentInteractable->Execute_OnEndHover(CurrentInteractable.GetObject(), GetOwner());
-		}
+		if (CurrentInteractionTarget.IsValid())
+			CurrentInteractionTarget->Execute_OnEndHover(CurrentInteractionTarget.Get(), GetOwner());
 
 		// 更新当前交互目标
-		CurrentInteractable = NewInteractable;
+		CurrentInteractionTarget = NewInteractionTarget;
 
 		// 进入新交互
-		if (CurrentInteractable)
+		if (CurrentInteractionTarget.IsValid())
+			CurrentInteractionTarget->Execute_OnBeginHover(CurrentInteractionTarget.Get(), GetOwner());
+	}
+}
+
+TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
+	const TArray<UInteractionTarget*>& Candidates,
+	const FVector& CameraLocation,
+	const FRotator& CameraRotation,
+	const FVector& HitLocation
+) const
+{
+	const APlayerController* PC = Cast<APlayerController>(GetOwner());
+	TWeakObjectPtr<UInteractionTarget> BestCandidate = nullptr;
+	float BestScore = -FLT_MAX;
+
+	for (const auto& Candidate : Candidates)
+	{
+		// 综合评分系统
+		float Score = 0.0f;
+
+		// 1. 组件优先级（如果有）
+		if (Candidate->UsePriority)
+			Score += Candidate->InteractionPriority * 1000.0f;
+
+		// 2. 距离到射线命中点
+		const float DistanceToHit = FVector::DistSquared(
+			Candidate->GetComponentLocation(),
+			HitLocation
+		);
+		Score -= DistanceToHit * 0.1f;
+
+		// 3. 屏幕空间位置（需要ProjectWorldLocationToScreen）
+		if (FVector2D ScreenPosition; PC->ProjectWorldLocationToScreen(
+			Candidate->GetComponentLocation(),
+			ScreenPosition,
+			true))
 		{
-			CurrentInteractable->Execute_OnBeginHover(CurrentInteractable.GetObject(), GetOwner());
+			FVector2D ViewportSize;
+			GEngine->GameViewport->GetViewportSize(ViewportSize);
+			const FVector2D ScreenCenter = ViewportSize * 0.5f;
+			const float ScreenDistance = FVector2D::Distance(ScreenPosition, ScreenCenter);
+			Score -= ScreenDistance * 10.0f;
+		}
+
+		// 4. 朝向检测（可选）
+		const FVector ToComponent = (Candidate->GetComponentLocation() - CameraLocation).GetSafeNormal();
+		const float DotProduct = FVector::DotProduct(ToComponent, CameraRotation.Vector());
+		Score += DotProduct * 50.0f;
+
+		// 更新最佳候选
+		if (Score > BestScore)
+		{
+			BestScore = Score;
+			BestCandidate = Candidate;
 		}
 	}
+
+	return BestCandidate;
 }
 
 void UInteractionManager::BindInput()
 {
-	if (!InteractiveInputMappingContext || !InteractiveInputAction) return;
+	if (!InteractiveInputMappingContext || !InteractiveInputAction)
+	{
+		return;
+	}
 
 	// 添加输入映射上下文
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
@@ -149,12 +204,42 @@ void UInteractionManager::BindInput()
 
 	// 绑定输入动作
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
-		EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Triggered, this, &UInteractionManager::HandleInput);
+	{
+		EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Triggered, this, &UInteractionManager::HandleTriggered);
+		EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Completed, this, &UInteractionManager::HandleCompleted);
+		// EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Ongoing, this, &UInteractionManager::HandleOngoing);
+	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void UInteractionManager::HandleInput(const FInputActionValue& Value)
+void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 {
-	if (CurrentInteractable.GetInterface())
-		CurrentInteractable->Execute_OnInteract(CurrentInteractable.GetObject(), GetOwner(), Value);
+	if (!CurrentInteractionTarget.IsValid())
+		return;
+
+	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get();
+		ActiveInteractionTarget->InteractionConfig.InteractionType == EInteractionType::Press)
+		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
+{
+	if (!CurrentInteractionTarget.IsValid())
+		return;
+
+	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get();
+		ActiveInteractionTarget->InteractionConfig.InteractionType == EInteractionType::Release)
+		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void UInteractionManager::HandleOngoing(const FInputActionValue& Value)
+{
+	if (!CurrentInteractionTarget.IsValid())
+		return;
+	
+	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get();
+		ActiveInteractionTarget->InteractionConfig.InteractionType == EInteractionType::Hold)
+		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
 }
