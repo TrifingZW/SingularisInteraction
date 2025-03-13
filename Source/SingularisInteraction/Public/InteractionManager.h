@@ -64,6 +64,7 @@ public:
 
 private:
 	TWeakObjectPtr<APlayerController> PlayerController = nullptr;
+	FTimerHandle HoldTimerHandle;
 
 public:
 	// 设置该组件属性的默认值
@@ -90,5 +91,5 @@ private:
 	void BindInput();
 	void HandleTriggered(const FInputActionValue& Value);
 	void HandleCompleted(const FInputActionValue& Value);
-	void HandleOngoing(const FInputActionValue& Value);
+	void HandleHold();
 };

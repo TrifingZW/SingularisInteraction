@@ -217,9 +217,21 @@ void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 	if (!CurrentInteractionTarget.IsValid())
 		return;
 
-	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get();
-		ActiveInteractionTarget->InteractionConfig.InteractionType == EInteractionType::Press)
-		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
+	{
+		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
+		if (InteractionType == EInteractionType::Press)
+			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+		if (InteractionType == EInteractionType::Hold)
+			GetWorld()->GetTimerManager().SetTimer(
+				HoldTimerHandle,
+				this,
+				&UInteractionManager::HandleHold,
+				ActiveInteractionTarget->InteractionConfig.HoldDuration,
+				// 动态时间阈值
+				false // 不循环
+			);
+	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -228,18 +240,21 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 	if (!CurrentInteractionTarget.IsValid())
 		return;
 
-	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get();
-		ActiveInteractionTarget->InteractionConfig.InteractionType == EInteractionType::Release)
-		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
+	{
+		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
+		if (InteractionType == EInteractionType::Press)
+			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+
+		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
+	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void UInteractionManager::HandleOngoing(const FInputActionValue& Value)
+void UInteractionManager::HandleHold()
 {
 	if (!CurrentInteractionTarget.IsValid())
 		return;
-	
-	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get();
-		ActiveInteractionTarget->InteractionConfig.InteractionType == EInteractionType::Hold)
-		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
+		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), {});
 }
