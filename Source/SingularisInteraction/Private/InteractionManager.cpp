@@ -13,15 +13,20 @@
 #include "EnhancedInputSubsystems.h"
 #include "InteractableInterface.h"
 #include "InteractionTarget.h"
+#include "InteractionWidget.h"
+
+#define LOCTEXT_NAMESPACE "InteractionManager"
 
 // 设置该组件属性的默认值
 UInteractionManager::UInteractionManager()
 {
 	// 设置该组件在游戏开始时初始化，并在每一帧进行更新。如果不需要这些功能，
 	// 可以关闭它们以提高性能。
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = true; // 启用 Tick
 
-	// ...
+	// 初始化 Hold 值
+	HoldProgress = 0.0f;
+	HoldTotalDuration = 0.0f;
 }
 
 void UInteractionManager::OnRegister()
@@ -55,8 +60,11 @@ void UInteractionManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 绑定输入
 	BindInput();
-	// ...
+
+	// 设置交互 UI 实例
+	CreateInteractionWidget();
 }
 
 
@@ -65,14 +73,18 @@ void UInteractionManager::TickComponent(const float DeltaTime, const ELevelTick 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	// 更新交互目标
 	UpdateInteractionTarget();
+
+	// 更新交互 UI
+	UpdateInteractionWidget();
 }
 
 void UInteractionManager::UpdateInteractionTarget()
 {
-	const APlayerController* PC = Cast<APlayerController>(GetOwner());
-	if (!PC) return;
+	const APlayerController* PC = PlayerController.Get();
+	if (!PC)
+		return;
 
 	// 获取摄像机参数
 	FVector CameraLoc;
@@ -109,12 +121,14 @@ void UInteractionManager::UpdateInteractionTarget()
 
 			// 存在多个候选时进行智能选择
 			if (InteractionComponents.Num() > 0)
+			{
 				NewInteractionTarget = FindBestInteractable(
 					InteractionComponents,
 					CameraLoc,
 					CameraRot,
 					HitResult.Location
 				);
+			}
 		}
 	}
 
@@ -130,8 +144,62 @@ void UInteractionManager::UpdateInteractionTarget()
 
 		// 进入新交互
 		if (CurrentInteractionTarget.IsValid())
+		{
 			CurrentInteractionTarget->Execute_OnBeginHover(CurrentInteractionTarget.Get(), GetOwner());
+			UpdateHintText(CurrentInteractionTarget.Get());
+		}
 	}
+}
+
+void UInteractionManager::UpdateInteractionWidget()
+{
+	// 更新交互 UI 可见性
+	if (CurrentInteractionTarget.IsValid())
+	{
+		InteractionWidget->ShowWidget();
+		// 更新交互 UI 长按进度
+		UpdateHoldProgress();
+	}
+	else
+		InteractionWidget->HideWidget();
+}
+
+void UInteractionManager::UpdateHoldProgress()
+{
+	// 更新Hold进度
+	if (GetWorld()->GetTimerManager().IsTimerActive(HoldTimerHandle))
+	{
+		const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(HoldTimerHandle);
+		HoldProgress = ElapsedTime / HoldTotalDuration;
+		InteractionWidget->ShowProgressBar();
+		InteractionWidget->SetHoldProgress(HoldProgress);
+	}
+	else
+	{
+		HoldProgress = 0.0f; // 重置长按进度
+		HoldTotalDuration = 0.0f; // 重置总持续时间
+		InteractionWidget->HideProgressBar();
+	}
+}
+
+void UInteractionManager::UpdateHintText(const UInteractionTarget* InteractionTarget) const
+{
+	// 根据交互类型获取动作文本
+	const FText KeyActionText = GetInteractionTypeText(InteractionTarget->InteractionConfig.InteractionType);
+
+	// 假设 KeyPrompt 是 FText 类型（如 "E" 键的本地化名称）
+	const FText KeyPromptText = KeyPrompt;
+
+	// 组合格式化的最终提示文本
+	const FText FormattedHint = FText::Format(
+		LOCTEXT("InteractionHintFormat", "{0}: [{1} {2}]"),
+		InteractionTarget->InteractionTitle,
+		KeyActionText,
+		KeyPromptText
+	);
+
+	// 设置到UI控件
+	InteractionWidget->SetHintText(FormattedHint);
 }
 
 TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
@@ -141,7 +209,7 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 	const FVector& HitLocation
 ) const
 {
-	const APlayerController* PC = Cast<APlayerController>(GetOwner());
+	const APlayerController* PC = PlayerController.Get();
 	TWeakObjectPtr<UInteractionTarget> BestCandidate = nullptr;
 	float BestScore = -FLT_MAX;
 
@@ -190,12 +258,23 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 	return BestCandidate;
 }
 
+void UInteractionManager::CreateInteractionWidget()
+{
+	// 创建交互 UI 实例
+	InteractionWidget = CreateWidget<UInteractionWidget>(PlayerController.Get(), InteractionWidgetClass);
+
+	// 添加到视口顶层（ZOrder值越大层级越高）
+	if (InteractionWidget)
+	{
+		InteractionWidget->AddToViewport(100); // 设置足够高的ZOrder值
+		InteractionWidget->HideWidget(); // 初始隐藏
+	}
+}
+
 void UInteractionManager::BindInput()
 {
 	if (!InteractiveInputMappingContext || !InteractiveInputAction)
-	{
 		return;
-	}
 
 	// 添加输入映射上下文
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
@@ -223,6 +302,8 @@ void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 		if (InteractionType == EInteractionType::Press)
 			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
 		if (InteractionType == EInteractionType::Hold)
+		{
+			HoldTotalDuration = ActiveInteractionTarget->InteractionConfig.HoldDuration;
 			GetWorld()->GetTimerManager().SetTimer(
 				HoldTimerHandle,
 				this,
@@ -231,6 +312,7 @@ void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 				// 动态时间阈值
 				false // 不循环
 			);
+		}
 	}
 }
 
@@ -243,7 +325,7 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
-		if (InteractionType == EInteractionType::Press)
+		if (InteractionType == EInteractionType::Release)
 			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
 
 		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
@@ -258,3 +340,18 @@ void UInteractionManager::HandleHold()
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), {});
 }
+
+FText UInteractionManager::GetInteractionTypeText(EInteractionType Type)
+{
+	switch (Type)
+	{
+	case EInteractionType::Press: return PressActionText;
+	case EInteractionType::Release: return ReleaseActionText;
+	case EInteractionType::Hold: return HoldActionText;
+	case EInteractionType::DoubleTap: return HoldActionText;
+	case EInteractionType::MultiTap: return MultiTapActionText;
+	default: return FText::GetEmpty();
+	}
+}
+
+#undef LOCTEXT_NAMESPACE

@@ -132,9 +132,15 @@ void UInteractionTarget::OnPromptRangeBeginOverlap(
 )
 {
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
+	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
+		{
 			if (Controller->FindComponentByClass(UInteractionManager::StaticClass()) != nullptr)
+			{
 				OnPlayersEnterPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+			}
+		}
+	}
 }
 
 void UInteractionTarget::OnPromptRangeEndOverlap(
@@ -145,9 +151,15 @@ void UInteractionTarget::OnPromptRangeEndOverlap(
 )
 {
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
+	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
+		{
 			if (Controller->FindComponentByClass(UInteractionManager::StaticClass()) != nullptr)
+			{
 				OnPlayerLeavingPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex);
+			}
+		}
+	}
 }
 
 void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, const FColor Color, const float Duration) const
@@ -217,7 +229,9 @@ void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
 	if (DebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 	if (Highlight)
+	{
 		HighlightComponent->EnableHighlight();
+	}
 }
 
 void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
@@ -226,7 +240,9 @@ void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
 	if (DebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 	if (Highlight)
+	{
 		HighlightComponent->DisableHighlight();
+	}
 }
 
 void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value)

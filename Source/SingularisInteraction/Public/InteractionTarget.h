@@ -64,13 +64,13 @@ class SINGULARISINTERACTION_API UInteractionTarget : public USceneComponent, pub
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadOnly, Category = "交互选项", meta=(EditHide))
+	UPROPERTY(BlueprintReadOnly, Category = "交互实例", meta=(EditHide))
 	UHighlightComponent* HighlightComponent = nullptr;
 
-	UPROPERTY(BlueprintReadOnly, Category = "交互选项", meta=(EditHide))
+	UPROPERTY(BlueprintReadOnly, Category = "交互实例", meta=(EditHide))
 	UWidgetComponent* WidgetComponent = nullptr;
 
-	UPROPERTY(BlueprintReadOnly, Category = "交互选项", meta=(EditHide))
+	UPROPERTY(BlueprintReadOnly, Category = "交互实例", meta=(EditHide))
 	UUserWidget* Widget = nullptr; // Widget 实例
 
 	UPROPERTY(EditAnywhere,
@@ -162,8 +162,7 @@ public:
 		))
 	UShapeComponent* PromptRange = nullptr;
 
-	UPROPERTY(EditAnywhere,
-		BlueprintReadWrite,
+	UPROPERTY(EditDefaultsOnly,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "提示UI",

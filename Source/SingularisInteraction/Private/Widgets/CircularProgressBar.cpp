@@ -1,5 +1,5 @@
 /* =====================================================================
- * InteractionTarget.cpp
+ * CircularProgressBar.cpp
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
  * 
@@ -7,4 +7,4 @@
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "InteractionType.h"
+#include "Widgets/CircularProgressBar.h"

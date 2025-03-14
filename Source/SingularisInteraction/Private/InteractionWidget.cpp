@@ -1,5 +1,5 @@
 /* =====================================================================
- * InteractionTarget.cpp
+ * InteractionWidget.cpp
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
  * 
@@ -7,4 +7,15 @@
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "InteractionType.h"
+#include "InteractionWidget.h"
+#include "Components/Image.h"
+
+void UInteractionWidget::ShowWidget()
+{
+	SetVisibility(ESlateVisibility::Visible);
+}
+
+void UInteractionWidget::HideWidget()
+{
+	SetVisibility(ESlateVisibility::Hidden);
+}
