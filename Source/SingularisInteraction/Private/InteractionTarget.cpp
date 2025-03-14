@@ -197,7 +197,7 @@ void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, co
 	{
 		const float Radius = SphereComponent->GetScaledSphereRadius();
 		// 绘制一个绿色的调试球体
-		DrawDebugSphere(GetWorld(), Center, Radius, 32, Color, false, Duration);
+		DrawDebugSphere(GetWorld(), Center, Radius, 16, Color, false, Duration);
 	}
 	else
 	{
