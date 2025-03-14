@@ -9,11 +9,13 @@
 
 #include "InteractionManager.h"
 
+#include "Engine.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InteractableInterface.h"
 #include "InteractionTarget.h"
 #include "InteractionWidget.h"
+#include "TimerManager.h"
 
 #define LOCTEXT_NAMESPACE "InteractionManager"
 
