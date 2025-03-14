@@ -82,6 +82,15 @@ public:
 		))
 	FText InteractionTitle = FText::FromString(TEXT("物品拾取"));
 
+	UPROPERTY(BlueprintReadWrite,
+		Category = "交互选项",
+		meta = (
+			DisplayName = "阻断交互",
+			ToolTip = "启用该选项则当前交互目标就不能被交互管理器交互",
+			EditHide
+		))
+	bool bBlockInteraction = false;
+
 	UPROPERTY(EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互选项",
@@ -98,7 +107,7 @@ public:
 			DisplayName = "启用优先级",
 			ToolTip = "启用交互优先级"
 		))
-	bool UsePriority = false;
+	bool bUsePriority = false;
 
 	UPROPERTY(EditAnywhere,
 		BlueprintReadWrite,
@@ -116,7 +125,7 @@ public:
 			DisplayName = "轮廓高亮",
 			ToolTip = "是否在物体出现在玩家视线上时触发高亮效果"
 		))
-	bool Highlight = true;
+	bool bHighlight = true;
 
 	/*UPROPERTY(EditAnywhere,
 		Category = "交互选项",
@@ -133,7 +142,7 @@ public:
 			DisplayName = "调试输出",
 			ToolTip = "是否输出调试信息"
 		))
-	bool DebugOutput = false;
+	bool bDebugOutput = false;
 
 	UPROPERTY(EditAnywhere,
 		BlueprintReadWrite,
@@ -142,7 +151,7 @@ public:
 			DisplayName = "调试绘制",
 			ToolTip = "是否绘制提示区域"
 		))
-	bool DebugDraw = false;
+	bool bDebugDraw = false;
 
 	UPROPERTY(EditAnywhere,
 		BlueprintReadWrite,
@@ -267,4 +276,20 @@ public:
 	virtual void OnBeginHover_Implementation(AActor* Interactor) override;
 	virtual void OnEndHover_Implementation(AActor* Interactor) override;
 	virtual void OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value) override;
+
+	// 阻断/启用交互
+	UFUNCTION(BlueprintCallable,
+		Category="交互函数",
+		meta = (
+			DisplayName = "阻断交互",
+			ToolTip = "调用此函数时，属性 bBlockInteraction 将会设置为 true，交互管理器将无法与该组件交互，该组件的事件会被阻塞，并且隐藏提示范围，提示UI等。"
+		))
+	void BlockInteraction();
+	UFUNCTION(BlueprintCallable,
+		Category="交互函数",
+		meta = (
+			DisplayName = "启用交互",
+			ToolTip = "调用此函数时，属性 bBlockInteraction 将会设置为 false，交互管理器将可以与该组件交互。"
+		))
+	void EnableInteraction();
 };

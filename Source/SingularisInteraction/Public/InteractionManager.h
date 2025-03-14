@@ -24,11 +24,11 @@ struct FInputActionValue;
 #define LOCTEXT_NAMESPACE "InteractionManager"
 
 // 定义本地化文本键（方便后续维护和多语言支持）
-const FText PressActionText = LOCTEXT("PressAction", "按下"); // "Press"
-const FText ReleaseActionText = LOCTEXT("ReleaseAction", "松开"); // "Release"
-const FText HoldActionText = LOCTEXT("HoldAction", "长按"); // "Hold"
-const FText DoubleTapActionText = LOCTEXT("DoubleTapAction", "双击"); // "Double Tap"
-const FText MultiTapActionText = LOCTEXT("MultiTapAction", "狂按"); // "Mash"
+const FText PressActionText = LOCTEXT("PressAction", "按下");
+const FText ReleaseActionText = LOCTEXT("ReleaseAction", "松开");
+const FText HoldActionText = LOCTEXT("HoldAction", "长按");
+const FText DoubleTapActionText = LOCTEXT("DoubleTapAction", "双击");
+const FText MultiTapActionText = LOCTEXT("MultiTapAction", "狂按");
 
 UCLASS(ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent, AllowedClasses="/Script/Engine.PlayerController"))
 class SINGULARISINTERACTION_API UInteractionManager : public USceneComponent
@@ -94,6 +94,8 @@ public:
 		))
 	TSubclassOf<UInteractionWidget> InteractionWidgetClass;
 
+	TWeakObjectPtr<UInteractionTarget> CurrentInteractionTarget;
+
 private:
 	TWeakObjectPtr<APlayerController> PlayerController = nullptr;
 	FTimerHandle HoldTimerHandle;
@@ -111,9 +113,6 @@ public:
 protected:
 	// 当游戏开始时调用
 	virtual void BeginPlay() override;
-
-private:
-	TWeakObjectPtr<UInteractionTarget> CurrentInteractionTarget;
 
 	void UpdateInteractionTarget();
 	void UpdateInteractionWidget();

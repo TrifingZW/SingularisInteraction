@@ -121,14 +121,12 @@ void UInteractionManager::UpdateInteractionTarget()
 
 			// 存在多个候选时进行智能选择
 			if (InteractionComponents.Num() > 0)
-			{
 				NewInteractionTarget = FindBestInteractable(
 					InteractionComponents,
 					CameraLoc,
 					CameraRot,
 					HitResult.Location
 				);
-			}
 		}
 	}
 
@@ -215,11 +213,14 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 
 	for (const auto& Candidate : Candidates)
 	{
+		// 如果交互目标启用了阻断交互则跳过
+		if (Candidate->bBlockInteraction) continue;
+
 		// 综合评分系统
 		float Score = 0.0f;
 
 		// 1. 组件优先级（如果有）
-		if (Candidate->UsePriority)
+		if (Candidate->bUsePriority)
 			Score += Candidate->InteractionPriority * 1000.0f;
 
 		// 2. 距离到射线命中点

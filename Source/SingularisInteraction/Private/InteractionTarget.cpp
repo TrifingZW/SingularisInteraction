@@ -79,11 +79,12 @@ void UInteractionTarget::TickComponent(const float DeltaTime, const ELevelTick T
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	// 如果阻断则返回
+	if (bBlockInteraction) return;
+
 	// 调试绘制范围
-	if (DebugDraw)
-	{
+	if (bDebugDraw)
 		DrawDebugRange(PromptRange, DebugDrawColor, 0.0f);
-	}
 }
 
 void UInteractionTarget::OnPlayersEnterPromptArea_Implementation(
@@ -131,6 +132,9 @@ void UInteractionTarget::OnPromptRangeBeginOverlap(
 	const FHitResult& SweepResult
 )
 {
+	// 如果阻断则返回
+	if (bBlockInteraction) return;
+
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
 	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
@@ -150,6 +154,9 @@ void UInteractionTarget::OnPromptRangeEndOverlap(
 	const int32 OtherBodyIndex
 )
 {
+	// 如果阻断则返回
+	if (bBlockInteraction) return;
+
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
 	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
@@ -226,9 +233,9 @@ void UInteractionTarget::RemoveWidgetFromScreen()
 void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
 {
 	// 显示高亮/UI提示
-	if (DebugOutput)
+	if (bDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
-	if (Highlight)
+	if (bHighlight)
 	{
 		HighlightComponent->EnableHighlight();
 	}
@@ -237,9 +244,9 @@ void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
 void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
 {
 	// 关闭高亮/提示
-	if (DebugOutput)
+	if (bDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
-	if (Highlight)
+	if (bHighlight)
 	{
 		HighlightComponent->DisableHighlight();
 	}
@@ -248,7 +255,22 @@ void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
 void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value)
 {
 	// 处理交互逻辑
-	if (DebugOutput)
+	if (bDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("与 %s 的 %s 交互目标交互"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 	OnInteractionEvent.Broadcast(Interactor, Value);
+}
+
+void UInteractionTarget::BlockInteraction()
+{
+	WidgetComponent->SetVisibility(false);
+	bBlockInteraction = true;
+}
+
+void UInteractionTarget::EnableInteraction()
+{
+	if (const UInteractionManager* IM = InteractionManager.Get())
+		if (IM->CurrentInteractionTarget == this)
+			WidgetComponent->SetVisibility(true);
+
+	bBlockInteraction = false;
 }
