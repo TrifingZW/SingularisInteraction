@@ -9,6 +9,7 @@
 
 #include "InteractionTarget.h"
 
+#include "DrawDebugHelpers.h"
 #include "HighlightComponent.h"
 #include "InteractionManager.h"
 #include "InteractionWidgetComponent.h"
@@ -18,7 +19,6 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
-#include "DrawDebugHelpers.h"
 
 // 设置该组件属性的默认值
 UInteractionTarget::UInteractionTarget()
@@ -54,9 +54,7 @@ void UInteractionTarget::BeginPlay()
 
 	// 设置 WidgetComponent 的 WidgetClass
 	if (PromptWidgetClass)
-	{
 		WidgetComponent->SetWidgetClass(PromptWidgetClass);
-	}
 
 	// 设置 PromptRange
 	if (PromptRange)
@@ -69,9 +67,7 @@ void UInteractionTarget::BeginPlay()
 	// 获取 InteractionManager
 	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 	if (const AController* Controller = PlayerPawn->GetController(); !PlayerPawn || !Controller)
-	{
 		InteractionManager = Controller->FindComponentByClass<UInteractionManager>();
-	}
 }
 
 // 每一帧调用
@@ -80,7 +76,8 @@ void UInteractionTarget::TickComponent(const float DeltaTime, const ELevelTick T
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// 如果阻断则返回
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+		return;
 
 	// 调试绘制范围
 	if (bDebugDraw)
@@ -133,18 +130,13 @@ void UInteractionTarget::OnPromptRangeBeginOverlap(
 )
 {
 	// 如果阻断则返回
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+		return;
 
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
-	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
-		{
 			if (Controller->FindComponentByClass(UInteractionManager::StaticClass()) != nullptr)
-			{
 				OnPlayersEnterPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-			}
-		}
-	}
 }
 
 void UInteractionTarget::OnPromptRangeEndOverlap(
@@ -155,26 +147,19 @@ void UInteractionTarget::OnPromptRangeEndOverlap(
 )
 {
 	// 如果阻断则返回
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+		return;
 
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
-	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
-		{
 			if (Controller->FindComponentByClass(UInteractionManager::StaticClass()) != nullptr)
-			{
 				OnPlayerLeavingPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex);
-			}
-		}
-	}
 }
 
 void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, const FColor Color, const float Duration) const
 {
 	if (!DebugShapeComponent || !GetWorld())
-	{
 		return;
-	}
 
 	const FVector Center = DebugShapeComponent->GetComponentLocation();
 	const FQuat Rotation = DebugShapeComponent->GetComponentQuat();
@@ -215,9 +200,7 @@ void UInteractionTarget::AddWidgetToScreen()
 
 		// 添加到视口
 		if (Widget)
-		{
 			Widget->AddToViewport();
-		}
 	}
 }
 
@@ -236,9 +219,7 @@ void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
 	if (bDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 	if (bHighlight)
-	{
 		HighlightComponent->EnableHighlight();
-	}
 }
 
 void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
@@ -247,9 +228,7 @@ void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
 	if (bDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 	if (bHighlight)
-	{
 		HighlightComponent->DisableHighlight();
-	}
 }
 
 void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value)

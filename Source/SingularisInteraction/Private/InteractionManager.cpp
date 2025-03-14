@@ -83,8 +83,7 @@ void UInteractionManager::TickComponent(const float DeltaTime, const ELevelTick 
 void UInteractionManager::UpdateInteractionTarget()
 {
 	const APlayerController* PC = PlayerController.Get();
-	if (!PC)
-		return;
+	if (!PC) return;
 
 	// 获取摄像机参数
 	FVector CameraLoc;
@@ -112,7 +111,6 @@ void UInteractionManager::UpdateInteractionTarget()
 	TWeakObjectPtr<UInteractionTarget> NewInteractionTarget = nullptr;
 
 	if (bHit)
-	{
 		if (const AActor* HitActor = HitResult.GetActor())
 		{
 			// 获取所有交互组件
@@ -128,7 +126,6 @@ void UInteractionManager::UpdateInteractionTarget()
 					HitResult.Location
 				);
 		}
-	}
 
 	// 统一处理交互状态变化
 	if (NewInteractionTarget != CurrentInteractionTarget)
@@ -214,10 +211,11 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 	for (const auto& Candidate : Candidates)
 	{
 		// 如果交互目标启用了阻断交互则跳过
-		if (Candidate->bBlockInteraction) continue;
+		if (Candidate->bBlockInteraction)
+			continue;
 
 		// 综合评分系统
-		float Score = 0.0f;
+		auto Score = 0.0f;
 
 		// 1. 组件优先级（如果有）
 		if (Candidate->bUsePriority)

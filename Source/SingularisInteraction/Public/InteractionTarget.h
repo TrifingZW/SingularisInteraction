@@ -13,9 +13,9 @@
 #include "InteractableInterface.h"
 #include "InteractionConfig.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Components/SceneComponent.h"
 #include "Components/ShapeComponent.h"
-#include "Blueprint/UserWidget.h"
 #include "InteractionTarget.generated.h"
 
 class UHighlightComponent;
