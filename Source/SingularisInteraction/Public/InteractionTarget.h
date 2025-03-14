@@ -82,7 +82,8 @@ public:
 		))
 	FText InteractionTitle = FText::FromString(TEXT("物品拾取"));
 
-	UPROPERTY(BlueprintReadWrite,
+	UPROPERTY(EditDefaultsOnly,
+		BlueprintReadWrite,
 		Category = "交互选项",
 		meta = (
 			DisplayName = "阻断交互",
