@@ -85,10 +85,7 @@ void UInteractionManager::TickComponent(const float DeltaTime, const ELevelTick 
 void UInteractionManager::UpdateInteractionTarget()
 {
 	const APlayerController* PC = PlayerController.Get();
-	if (!PC)
-	{
-		return;
-	}
+	if (!PC) return;
 
 	// 获取摄像机参数
 	FVector CameraLoc;
@@ -116,7 +113,6 @@ void UInteractionManager::UpdateInteractionTarget()
 	TWeakObjectPtr<UInteractionTarget> NewInteractionTarget = nullptr;
 
 	if (bHit)
-	{
 		if (const AActor* HitActor = HitResult.GetActor())
 		{
 			// 获取所有交互组件
@@ -125,25 +121,20 @@ void UInteractionManager::UpdateInteractionTarget()
 
 			// 存在多个候选时进行智能选择
 			if (InteractionComponents.Num() > 0)
-			{
 				NewInteractionTarget = FindBestInteractable(
 					InteractionComponents,
 					CameraLoc,
 					CameraRot,
 					HitResult.Location
 				);
-			}
 		}
-	}
 
 	// 统一处理交互状态变化
 	if (NewInteractionTarget != CurrentInteractionTarget)
 	{
 		// 退出旧交互
 		if (CurrentInteractionTarget.IsValid())
-		{
 			CurrentInteractionTarget->Execute_OnEndHover(CurrentInteractionTarget.Get(), GetOwner());
-		}
 
 		// 更新当前交互目标
 		CurrentInteractionTarget = NewInteractionTarget;
@@ -167,9 +158,7 @@ void UInteractionManager::UpdateInteractionWidget()
 		UpdateHoldProgress();
 	}
 	else
-	{
 		InteractionWidget->HideWidget();
-	}
 }
 
 void UInteractionManager::UpdateHoldProgress()
@@ -225,18 +214,14 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 	{
 		// 如果交互目标启用了阻断交互则跳过
 		if (Candidate->bBlockInteraction)
-		{
 			continue;
-		}
 
 		// 综合评分系统
 		auto Score = 0.0f;
 
 		// 1. 组件优先级（如果有）
 		if (Candidate->bUsePriority)
-		{
 			Score += Candidate->InteractionPriority * 1000.0f;
-		}
 
 		// 2. 距离到射线命中点
 		const float DistanceToHit = FVector::DistSquared(
@@ -249,8 +234,7 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 		if (FVector2D ScreenPosition; PC->ProjectWorldLocationToScreen(
 			Candidate->GetComponentLocation(),
 			ScreenPosition,
-			true
-		))
+			true))
 		{
 			FVector2D ViewportSize;
 			GEngine->GameViewport->GetViewportSize(ViewportSize);
@@ -291,17 +275,12 @@ void UInteractionManager::CreateInteractionWidget()
 void UInteractionManager::BindInput()
 {
 	if (!InteractiveInputMappingContext || !InteractiveInputAction)
-	{
 		return;
-	}
 
 	// 添加输入映射上下文
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
-		PlayerController->GetLocalPlayer()
-	))
-	{
+		PlayerController->GetLocalPlayer()))
 		Subsystem->AddMappingContext(InteractiveInputMappingContext, InputPriority);
-	}
 
 	// 绑定输入动作
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
@@ -316,17 +295,13 @@ void UInteractionManager::BindInput()
 void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 {
 	if (!CurrentInteractionTarget.IsValid())
-	{
 		return;
-	}
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 		if (InteractionType == EInteractionType::Press)
-		{
 			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
-		}
 		if (InteractionType == EInteractionType::Hold)
 		{
 			HoldTotalDuration = ActiveInteractionTarget->InteractionConfig.HoldDuration;
@@ -346,17 +321,13 @@ void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 {
 	if (!CurrentInteractionTarget.IsValid())
-	{
 		return;
-	}
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 		if (InteractionType == EInteractionType::Release)
-		{
 			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
-		}
 
 		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 	}
@@ -366,13 +337,9 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 void UInteractionManager::HandleHold()
 {
 	if (!CurrentInteractionTarget.IsValid())
-	{
 		return;
-	}
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
-	{
 		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), {});
-	}
 }
 
 FText UInteractionManager::GetInteractionTypeText(EInteractionType Type)
