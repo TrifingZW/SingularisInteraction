@@ -94,18 +94,6 @@ public:
 	FText InteractionTitle = FText::FromString(TEXT("物品拾取"));
 
 	UPROPERTY(
-		EditDefaultsOnly,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "阻断交互",
-			ToolTip = "启用该选项则当前交互目标就不能被交互管理器交互",
-			EditHide
-		)
-	)
-	bool bBlockInteraction = false;
-
-	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互目标|属性",
@@ -251,10 +239,15 @@ public:
 
 #pragma endregion
 
+#pragma region 交互目标公共变量
+
+	bool bBlockInteraction = false;
+
+#pragma endregion
+
 private:
 #pragma region 交互目标私有变量
 
-	bool bCanInteract = false;
 	TWeakObjectPtr<UInteractionManager> InteractionManager = nullptr;
 
 #pragma endregion
@@ -264,7 +257,6 @@ public:
 
 	UInteractionTarget();
 	virtual void OnRegister() override;
-	bool IsInteractable() const { return bCanInteract; }
 
 #pragma endregion
 
@@ -321,7 +313,7 @@ private:
 
 #pragma endregion
 
-#pragma region 交互管理器私有函数
+#pragma region 交互目标私有函数
 
 	void DrawDebugRange(UShapeComponent* DebugShapeComponent, FColor Color, float Duration) const;
 	void AddWidgetToScreen();
@@ -338,11 +330,11 @@ public:
 
 #pragma endregion
 
-#pragma region 交互管理器公有函数
+#pragma region 交互目标公有函数
 
 	UFUNCTION(
 		BlueprintCallable,
-		Category="交互管理器|函数",
+		Category="交互目标|函数",
 		meta = (
 			DisplayName = "阻断交互",
 			ToolTip = "调用此函数时，属性 bBlockInteraction 将会设置为 true，交互管理器将无法与该组件交互，该组件的事件会被阻塞，并且隐藏提示范围，提示UI等。"
@@ -352,7 +344,7 @@ public:
 
 	UFUNCTION(
 		BlueprintCallable,
-		Category="交互管理器|函数",
+		Category="交互目标|函数",
 		meta = (
 			DisplayName = "启用交互",
 			ToolTip = "调用此函数时，属性 bBlockInteraction 将会设置为 false，交互管理器将可以与该组件交互。"

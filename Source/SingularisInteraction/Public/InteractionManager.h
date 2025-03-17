@@ -136,6 +136,7 @@ private:
 	FTimerHandle HoldTimerHandle;
 	float HoldProgress;
 	float HoldTotalDuration;
+	bool bCanInteract;
 
 #pragma endregion
 
@@ -156,7 +157,7 @@ protected:
 #pragma endregion
 
 #pragma region 交互管理器保护函数
-	
+
 	void UpdateInteractionTarget();
 	void UpdateInteractionWidget();
 	void UpdateHoldProgress();
@@ -178,6 +179,30 @@ protected:
 	void HandleTriggered(const FInputActionValue& Value);
 	void HandleCompleted(const FInputActionValue& Value);
 	void HandleHold();
+
+#pragma endregion
+
+#pragma region 交互管理器公有函数
+
+	UFUNCTION(
+		BlueprintCallable,
+		Category="交互管理器|函数",
+		meta = (
+			DisplayName = "关闭交互",
+			ToolTip = "调用此函数时，交换管理器将不可交互"
+		)
+	)
+	void CloseInteraction();
+
+	UFUNCTION(
+		BlueprintCallable,
+		Category="交互管理器|函数",
+		meta = (
+			DisplayName = "启用交互",
+			ToolTip = "调用此函数时，交换管理器将可交互"
+		)
+	)
+	void EnableInteraction();
 
 #pragma endregion
 

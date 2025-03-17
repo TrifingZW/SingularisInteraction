@@ -75,11 +75,14 @@ void UInteractionManager::TickComponent(const float DeltaTime, const ELevelTick 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// 更新交互目标
-	UpdateInteractionTarget();
+	if (bCanInteract)
+	{
+		// 更新交互目标
+		UpdateInteractionTarget();
 
-	// 更新交互 UI
-	UpdateInteractionWidget();
+		// 更新交互 UI
+		UpdateInteractionWidget();
+	}
 }
 
 void UInteractionManager::UpdateInteractionTarget()
@@ -234,7 +237,8 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 		if (FVector2D ScreenPosition; PC->ProjectWorldLocationToScreen(
 			Candidate->GetComponentLocation(),
 			ScreenPosition,
-			true))
+			true
+		))
 		{
 			FVector2D ViewportSize;
 			GEngine->GameViewport->GetViewportSize(ViewportSize);
@@ -279,7 +283,8 @@ void UInteractionManager::BindInput()
 
 	// 添加输入映射上下文
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
-		PlayerController->GetLocalPlayer()))
+		PlayerController->GetLocalPlayer()
+	))
 		Subsystem->AddMappingContext(InteractiveInputMappingContext, InputPriority);
 
 	// 绑定输入动作
@@ -340,6 +345,22 @@ void UInteractionManager::HandleHold()
 		return;
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), {});
+}
+
+void UInteractionManager::CloseInteraction()
+{
+	bCanInteract = false;
+	HoldProgress = 0.0f;
+	HoldTotalDuration = 0.0f;
+	InteractionWidget->HideProgressBar();
+	InteractionWidget->HideWidget();
+	GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
+}
+
+void UInteractionManager::EnableInteraction()
+{
+	bCanInteract = true;
+	InteractionWidget->ShowWidget();
 }
 
 FText UInteractionManager::GetInteractionTypeText(EInteractionType Type)
