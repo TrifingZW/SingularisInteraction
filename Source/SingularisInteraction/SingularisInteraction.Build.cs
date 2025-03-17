@@ -30,7 +30,7 @@ public class SingularisInteraction : ModuleRules
 				"SlateCore",
 				"InputCore",
 				"EnhancedInput"
-				// ... add other public dependencies that you statically link with here ...
+				// ... 添加您在此处静态链接的其他公共依赖性 ...
 			]
 		);
 
@@ -39,14 +39,14 @@ public class SingularisInteraction : ModuleRules
 			[
 				"CoreUObject",
 				"Engine",
-				// ... add private dependencies that you statically link with here ...	
+				// ... 添加您在此处静态链接的私人依赖项 ...	
 			]
 		);
 
 
 		DynamicallyLoadedModuleNames.AddRange(
 			[
-				// ... add any modules that your module loads dynamically here ...
+				// ... 在此处添加模块动态加载的所有模块 ...
 			]
 		);
 	}

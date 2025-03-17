@@ -24,17 +24,21 @@ class SINGULARISINTERACTION_API UCircularProgressBar : public UUserWidget
 
 public:
 	// 关键控件绑定（在蓝图中实际绑定）
-	UPROPERTY(BlueprintReadWrite,
+	UPROPERTY(
+		BlueprintReadWrite,
 		Category = "UI",
-		meta = (BindWidget, EditHide))
+		meta = (BindWidget, EditHide)
+	)
 	UImage* Image;
 
-	UFUNCTION(BlueprintImplementableEvent,
+	UFUNCTION(
+		BlueprintImplementableEvent,
 		BlueprintCallable,
 		Category = "UI事件",
 		meta = (
 			DisplayName = "设置百分比",
 			ToolTip = "当玩家长按时会调用此函数，并且会给一个进度值，你需要做的是设置进度条的进度"
-		))
+		)
+	)
 	void SetPercent(float Percent);
 };

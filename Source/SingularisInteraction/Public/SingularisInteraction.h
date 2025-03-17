@@ -11,10 +11,10 @@
 
 #include "Modules/ModuleManager.h"
 
-class FSingularisInteractionModule : public IModuleInterface
+class FSingularisInteractionModule final : public IModuleInterface
 {
 public:
-	/** IModuleInterface implementation */
+	/** IModuleInterface 实现 */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 };
