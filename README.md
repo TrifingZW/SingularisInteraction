@@ -4,7 +4,8 @@
   </a>
 
   <h1 align="center">SingularisInteraction</h1>
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=24&duration=3000&pause=500&color=C191FF&center=true&vCenter=true&width=800&lines=🚀+基于+Unreal+Engine+5+的纯C%2B%2B交互插件;⚡+零运行时性能损耗;🎮+蓝图友好" alt="动态标题" />
+
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=24&duration=3000&pause=500&center=true&vCenter=true&width=435&lines=%F0%9F%9A%80+%E5%9F%BA%E4%BA%8E+Unreal+Engine+5+%E7%9A%84%E7%BA%AFC%2B%2B%E4%BA%A4%E4%BA%92%E6%8F%92%E4%BB%B6;%E2%9A%A1+%E9%9B%B6%E8%BF%90%E8%A1%8C%E6%97%B6%E6%80%A7%E8%83%BD%E6%8D%9F%E8%80%97;%F0%9F%8E%AE+%E8%93%9D%E5%9B%BE%E5%8F%8B%E5%A5%BD)](https://git.io/typing-svg)
 
   <p align="center">
     <br />
