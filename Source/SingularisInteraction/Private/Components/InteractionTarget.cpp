@@ -1,24 +1,27 @@
 /* =====================================================================
  * InteractionTarget.cpp
  * SPDX-License-Identifier: MIT
- * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
- * Copyright (c) 2024 TrifingZW
+ * Copyright (c) 2024-2025 TrifingZW
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "InteractionTarget.h"
+#include "Components/InteractionTarget.h"
+
+#include <GameFramework/Character.h>
 
 #include "DrawDebugHelpers.h"
-#include "HighlightComponent.h"
-#include "InteractionManager.h"
-#include "InteractionWidgetComponent.h"
-#include "Blueprint/UserWidget.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/InteractionManager.h"
+#include "Components/InteractionWidgetComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
+#include "Widgets/InteractionTargetWidget.h"
+
+#define ECC_INTERACTABLE ECC_GameTraceChannel1
 
 // 设置该组件属性的默认值
 UInteractionTarget::UInteractionTarget()
@@ -28,21 +31,27 @@ UInteractionTarget::UInteractionTarget()
 
 	UInteractionWidgetComponent* InteractionWidgetComponent = CreateDefaultSubobject<UInteractionWidgetComponent>(TEXT("WidgetComponent"));
 	InteractionWidgetComponent->SetupAttachment(this);
-	InteractionWidgetComponent->SetVisibility(false);
 	InteractionWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	WidgetComponent = InteractionWidgetComponent;
-
-	HighlightComponent = CreateDefaultSubobject<UHighlightComponent>(TEXT("HighlightComponent"));
 }
 
 void UInteractionTarget::OnRegister()
 {
 	Super::OnRegister();
 
+	if (InteractiveRange)
+	{
+		InteractiveRange->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetIncludingScale);
+		InteractiveRange->UpdateComponentToWorld();
+		// InteractiveRange->Rename(TEXT("InteractiveRange"));
+		InteractiveRange->ComponentTags.Add(FName("Interactable"));
+	}
+
 	if (PromptRange)
 	{
 		PromptRange->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetIncludingScale);
 		PromptRange->UpdateComponentToWorld();
+		// PromptRange->Rename(TEXT("PromptRange"));
 	}
 }
 
@@ -52,22 +61,39 @@ void UInteractionTarget::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (HighlightComponentClass)
+	{
+		HighlightComponent = NewObject<UHighlightComponent>(this, HighlightComponentClass);
+	}
+
 	// 设置 WidgetComponent 的 WidgetClass
-	if (PromptWidgetClass)
-		WidgetComponent->SetWidgetClass(PromptWidgetClass);
+	if
+	(PromptWidgetClass)
+	{
+		WidgetComponent->SetWidgetClass(PromptWidgetClass.Get());
+	}
+
+	// 设置 InteractiveRange
+	if
+	(InteractiveRange)
+	{
+		InteractiveRange->SetCollisionResponseToChannel(ECC_INTERACTABLE, ECR_Block);
+	}
 
 	// 设置 PromptRange
-	if (PromptRange)
+	if
+	(PromptRange)
 	{
 		PromptRange->SetCollisionProfileName(TEXT("Trigger"));
+		PromptRange->SetCollisionResponseToChannel(ECC_INTERACTABLE, ECR_Ignore);
 		PromptRange->OnComponentBeginOverlap.AddDynamic(this, &UInteractionTarget::OnPromptRangeBeginOverlap);
 		PromptRange->OnComponentEndOverlap.AddDynamic(this, &UInteractionTarget::OnPromptRangeEndOverlap);
 	}
 
-	// 获取 InteractionManager
-	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	if (const AController* Controller = PlayerPawn->GetController(); !PlayerPawn || !Controller)
-		InteractionManager = Controller->FindComponentByClass<UInteractionManager>();
+	if (const APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		InteractionManager = PlayerController->FindComponentByClass<UInteractionManager>();
+	}
 }
 
 // 每一帧调用
@@ -77,11 +103,16 @@ void UInteractionTarget::TickComponent(const float DeltaTime, const ELevelTick T
 
 	// 如果阻断则返回
 	if (bBlockInteraction)
+	{
 		return;
+	}
 
 	// 调试绘制范围
-	if (bDebugDraw)
-		DrawDebugRange(PromptRange, DebugDrawColor, 0.0f);
+	if (bInteractionDebugDraw)
+	{
+		DrawDebugRange(InteractiveRange, InteractiveRange->ShapeColor, 0.0f);
+		DrawDebugRange(PromptRange, PromptRange->ShapeColor, 0.0f);
+	}
 }
 
 void UInteractionTarget::OnPlayersEnterPromptArea_Implementation(
@@ -93,7 +124,10 @@ void UInteractionTarget::OnPlayersEnterPromptArea_Implementation(
 	const FHitResult& SweepResult
 )
 {
-	WidgetComponent->SetVisibility(true);
+	if (UUserWidget* Widget = WidgetComponent->GetWidget())
+	{
+		Cast<UInteractionTargetWidget>(Widget)->ShowWidget();
+	}
 	OnPlayersEnterPromptAreaEvent.Broadcast(
 		OverlappedComponent,
 		Pawn,
@@ -111,7 +145,10 @@ void UInteractionTarget::OnPlayerLeavingPromptArea_Implementation(
 	const int32 OtherBodyIndex
 )
 {
-	WidgetComponent->SetVisibility(false);
+	if (UUserWidget* Widget = WidgetComponent->GetWidget())
+	{
+		Cast<UInteractionTargetWidget>(Widget)->HideWidget();
+	}
 	OnPlayerLeavingPromptAreaEvent.Broadcast(
 		OverlappedComponent,
 		Pawn,
@@ -131,12 +168,20 @@ void UInteractionTarget::OnPromptRangeBeginOverlap(
 {
 	// 如果阻断则返回
 	if (bBlockInteraction)
+	{
 		return;
+	}
 
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
+	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
+		{
 			if (Controller->FindComponentByClass(UInteractionManager::StaticClass()) != nullptr)
+			{
 				OnPlayersEnterPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+			}
+		}
+	}
 }
 
 void UInteractionTarget::OnPromptRangeEndOverlap(
@@ -148,18 +193,28 @@ void UInteractionTarget::OnPromptRangeEndOverlap(
 {
 	// 如果阻断则返回
 	if (bBlockInteraction)
+	{
 		return;
+	}
 
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
+	{
 		if (const AController* Controller = Pawn->GetController(); Controller && Controller->IsLocalPlayerController())
+		{
 			if (Controller->FindComponentByClass(UInteractionManager::StaticClass()) != nullptr)
+			{
 				OnPlayerLeavingPromptArea(OverlappedComponent, Pawn, OtherComp, OtherBodyIndex);
+			}
+		}
+	}
 }
 
 void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, const FColor Color, const float Duration) const
 {
 	if (!DebugShapeComponent || !GetWorld())
+	{
 		return;
+	}
 
 	const FVector Center = DebugShapeComponent->GetComponentLocation();
 	const FQuat Rotation = DebugShapeComponent->GetComponentQuat();
@@ -191,65 +246,113 @@ void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, co
 	}
 }
 
-void UInteractionTarget::AddWidgetToScreen()
+void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint)
 {
-	if (PromptWidgetClass)
+	if (bBlockInteraction)
 	{
-		// 创建 Widget 实例
-		Widget = CreateWidget<UUserWidget>(GetWorld(), PromptWidgetClass);
-
-		// 添加到视口
-		if (Widget)
-			Widget->AddToViewport();
+		return;
 	}
-}
 
-void UInteractionTarget::RemoveWidgetFromScreen()
-{
-	if (Widget)
-	{
-		Widget->RemoveFromParent();
-		Widget = nullptr;
-	}
-}
-
-void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor)
-{
-	// 显示高亮/UI提示
-	if (bDebugOutput)
+	if (bInteractionDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
-	if (bHighlight)
-		HighlightComponent->EnableHighlight();
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
+	{
+		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
+		{
+			OnBeginFocusedEvent.Broadcast(PlayerController, Character, ImpactPoint);
+		}
+	}
+
+	if (bInteractionHighlight)
+	{
+		if (HighlightComponent)
+		{
+			HighlightComponent->EnableHighlight(GetOwner());
+		}
+	}
 }
 
-void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor)
+void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint)
 {
-	// 关闭高亮/提示
-	if (bDebugOutput)
+	if (bBlockInteraction)
+	{
+		return;
+	}
+
+	if (bInteractionDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
-	if (bHighlight)
-		HighlightComponent->DisableHighlight();
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
+	{
+		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
+		{
+			OnEndFocusedEvent.Broadcast(PlayerController, Character, ImpactPoint);
+		}
+	}
+
+	if (bInteractionHighlight)
+	{
+		if (HighlightComponent)
+		{
+			HighlightComponent->DisableHighlight(GetOwner());
+		}
+	}
 }
 
-void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value)
+void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint, const FInputActionValue& Value)
 {
+	if (bBlockInteraction)
+	{
+		return;
+	}
+
 	// 处理交互逻辑
-	if (bDebugOutput)
+	if (bInteractionDebugOutput)
 		UE_LOG(LogTemp, Warning, TEXT("与 %s 的 %s 交互目标交互"), *GetOwner()->GetName(), *InteractionTitle.ToString());
-	OnInteractionEvent.Broadcast(Interactor, Value);
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
+	{
+		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
+		{
+			OnInteractionEvent.Broadcast(PlayerController, Character, ImpactPoint, Value);
+		}
+	}
 }
 
 void UInteractionTarget::BlockInteraction()
 {
-	WidgetComponent->SetVisibility(false);
+	if (UUserWidget* Widget = WidgetComponent->GetWidget())
+	{
+		Cast<UInteractionTargetWidget>(Widget)->HideWidget();
+		HighlightComponent->DisableHighlight(GetOwner());
+	}
 	bBlockInteraction = true;
 }
 
-void UInteractionTarget::EnableInteraction()
+void UInteractionTarget::UnlockInteraction()
 {
 	if (const UInteractionManager* IM = InteractionManager.Get())
-		if (IM->CurrentInteractionTarget == this)
-			WidgetComponent->SetVisibility(true);
+	{
+		if (const auto* PlayerController = IM->PlayerController.Get())
+		{
+			if (PromptRange->IsOverlappingActor(PlayerController->GetPawn()))
+			{
+				if (UUserWidget* Widget = WidgetComponent->GetWidget())
+				{
+					Cast<UInteractionTargetWidget>(Widget)->ShowWidget();
+				}
+			}
+		}
+	}
+
+	/*if (IM->CurrentInteractionTarget == this)
+	{
+		if (UUserWidget* Widget = WidgetComponent->GetWidget())
+		{
+			Cast<UInteractionTargetWidget>(Widget)->ShowWidget();
+		}
+	}*/
 
 	bBlockInteraction = false;
 }

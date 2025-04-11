@@ -1,9 +1,9 @@
 /* =====================================================================
  * InteractionManager.h
  * SPDX-License-Identifier: MIT
- * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
- * Copyright (c) 2024 TrifingZW
+ * Copyright (c) 2024-2025 TrifingZW
  * Licensed under MIT License
  * ===================================================================== */
 
@@ -11,10 +11,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Engine/NetSerialization.h"
 #include "InteractionManager.generated.h"
 
 enum class EInteractionType : uint8;
-class UInteractionWidget;
+class UInteractionManagerWidget;
 class UInteractionTarget;
 class UInputMappingContext;
 class UInputAction;
@@ -33,7 +34,7 @@ const FText MultiTapActionText = LOCTEXT("MultiTapAction", "狂按");
 /**
  * 交互管理器
  */
-UCLASS(ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent, AllowedClasses="/Script/Engine.PlayerController"))
+UCLASS(Blueprintable, ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent))
 class SINGULARISINTERACTION_API UInteractionManager : public USceneComponent
 {
 	GENERATED_BODY()
@@ -41,8 +42,16 @@ class SINGULARISINTERACTION_API UInteractionManager : public USceneComponent
 public:
 #pragma region 交互管理器持有实例
 
-	UPROPERTY(BlueprintReadOnly, Category = "交互管理器|持有实例", meta=(EditHide))
-	UInteractionWidget* InteractionWidget; // 交互 UI 实例
+	UPROPERTY(
+		BlueprintReadOnly,
+		Category = "交互管理器|持有实例",
+		meta = (
+			EditHide,
+			DisplayName = "屏幕控件",
+			ToolTip = "交互管理器持有的屏幕控件"
+		)
+	)
+	UInteractionManagerWidget* InteractionManagerWidget = nullptr;
 
 #pragma endregion
 
@@ -119,12 +128,13 @@ public:
 			ToolTip = "要绘制的交互的控件类"
 		)
 	)
-	TSubclassOf<UInteractionWidget> InteractionWidgetClass;
+	TSubclassOf<UInteractionManagerWidget> InteractionWidgetClass;
 
 #pragma endregion
 
-#pragma region 交互管理器公共变量
+#pragma region 交互管理器公开变量
 
+	TWeakObjectPtr<APlayerController> PlayerController = nullptr;
 	TWeakObjectPtr<UInteractionTarget> CurrentInteractionTarget;
 
 #pragma endregion
@@ -132,16 +142,18 @@ public:
 private:
 #pragma region 交互管理器私有变量
 
-	TWeakObjectPtr<APlayerController> PlayerController = nullptr;
-	FTimerHandle HoldTimerHandle;
-	float HoldProgress;
-	float HoldTotalDuration;
-	bool bCanInteract;
+	FTimerHandle HoldTimerHandle{};
+	float HoldProgress{};
+	float HoldTotalDuration{};
+	bool bCanInteract = true;
+	bool IsProgress{};
+	FVector_NetQuantize CurrentHitImpactPoint{};
+
 
 #pragma endregion
 
 public:
-#pragma region 公共常规函数
+#pragma region 公开常规函数
 
 	UInteractionManager();
 	virtual void OnRegister() override;
@@ -163,12 +175,12 @@ protected:
 	void UpdateHoldProgress();
 	void UpdateHintText(const UInteractionTarget* InteractionTarget) const;
 
-	TWeakObjectPtr<UInteractionTarget> FindBestInteractable(
+	/*TWeakObjectPtr<UInteractionTarget> FindBestInteractable(
 		const TArray<UInteractionTarget*>& Candidates,
 		const FVector& CameraLocation,
 		const FRotator& CameraRotation,
 		const FVector& HitLocation
-	) const;
+	) const;*/
 	void CreateInteractionWidget();
 
 #pragma endregion
@@ -182,6 +194,7 @@ protected:
 
 #pragma endregion
 
+public:
 #pragma region 交互管理器公有函数
 
 	UFUNCTION(
@@ -192,7 +205,7 @@ protected:
 			ToolTip = "调用此函数时，交换管理器将不可交互"
 		)
 	)
-	void CloseInteraction();
+	void DisableInteraction();
 
 	UFUNCTION(
 		BlueprintCallable,

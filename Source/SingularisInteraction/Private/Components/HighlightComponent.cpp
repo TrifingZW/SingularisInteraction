@@ -1,5 +1,5 @@
 /* =====================================================================
- * CircularProgressBar.cpp
+ * HighlightComponent.cpp
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
@@ -7,4 +7,12 @@
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "Widgets/CircularProgressBar.h"
+#include "Components/HighlightComponent.h"
+
+void UHighlightComponent::EnableHighlight_Implementation(AActor* Actor)
+{
+}
+
+void UHighlightComponent::DisableHighlight_Implementation(AActor* Actor)
+{
+}

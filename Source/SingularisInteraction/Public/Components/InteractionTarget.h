@@ -1,33 +1,59 @@
 /* =====================================================================
  * InteractionTarget.h
  * SPDX-License-Identifier: MIT
- * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
- * Copyright (c) 2024 TrifingZW
+ * Copyright (c) 2024-2025 TrifingZW
  * Licensed under MIT License
  * ===================================================================== */
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InteractableInterface.h"
+#include "HighlightComponent.h"
 #include "InteractionConfig.h"
-
-#include "Blueprint/UserWidget.h"
 #include "Components/SceneComponent.h"
 #include "Components/ShapeComponent.h"
+#include "Interfaces/InteractableInterface.h"
 #include "InteractionTarget.generated.h"
 
-class UHighlightComponent;
+class IHighlightInterface;
+class UInteractionTargetWidget;
 class UWidgetComponent;
 class UInteractionManager;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+#pragma region 委托签名
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(
 	FOnInteractionSignature,
-	AActor*,
-	Interactor,
+	APlayerController*,
+	PlayerController,
+	ACharacter*,
+	Character,
+	FVector_NetQuantize,
+	ImpactPoint,
 	const FInputActionValue&,
 	Value
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
+	FOnBeginFocusedSignature,
+	APlayerController*,
+	PlayerController,
+	ACharacter*,
+	Character,
+	FVector_NetQuantize,
+	ImpactPoint
+);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
+	FOnEndFocusedSignature,
+	APlayerController*,
+	PlayerController,
+	ACharacter*,
+	Character,
+	FVector_NetQuantize,
+	ImpactPoint
 );
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(
@@ -58,10 +84,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(
 	OtherBodyIndex
 );
 
+#pragma endregion
+
 /**
  * 交互目标
  */
-UCLASS(ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent))
 class SINGULARISINTERACTION_API UInteractionTarget : public USceneComponent, public IInteractableInterface
 {
 	GENERATED_BODY()
@@ -69,14 +97,27 @@ class SINGULARISINTERACTION_API UInteractionTarget : public USceneComponent, pub
 public:
 #pragma region 交互目标持有实例
 
-	UPROPERTY(BlueprintReadOnly, Category = "交互目标|持有实例", meta=(EditHide))
+	UPROPERTY(
+		BlueprintReadOnly,
+		Category = "交互目标|持有实例",
+		meta = (
+			EditHide,
+			DisplayName = "高亮组件",
+			ToolTip = "交互目标持有的高亮组件"
+		)
+	)
 	UHighlightComponent* HighlightComponent = nullptr;
 
-	UPROPERTY(BlueprintReadOnly, Category = "交互目标|持有实例", meta=(EditHide))
+	UPROPERTY(
+		BlueprintReadOnly,
+		Category = "交互目标|持有实例",
+		meta = (
+			EditHide,
+			DisplayName = "控件组件",
+			ToolTip = "交互目标持有的控件组件"
+		)
+	)
 	UWidgetComponent* WidgetComponent = nullptr;
-
-	UPROPERTY(BlueprintReadOnly, Category = "交互目标|持有实例", meta=(EditHide))
-	UUserWidget* Widget = nullptr;
 
 #pragma endregion
 
@@ -109,11 +150,11 @@ public:
 		BlueprintReadWrite,
 		Category = "交互目标|属性",
 		meta = (
-			DisplayName = "启用优先级",
+			DisplayName = "启用交互优先级",
 			ToolTip = "启用交互优先级"
 		)
 	)
-	bool bUsePriority = false;
+	bool bUseInteractionPriority = false;
 
 	UPROPERTY(
 		EditAnywhere,
@@ -135,7 +176,7 @@ public:
 			ToolTip = "是否在物体出现在玩家视线上时触发高亮效果"
 		)
 	)
-	bool bHighlight = true;
+	bool bInteractionHighlight = true;
 
 	/*UPROPERTY(EditAnywhere,
 		Category = "交互选项",
@@ -154,7 +195,7 @@ public:
 			ToolTip = "是否输出调试信息"
 		)
 	)
-	bool bDebugOutput = false;
+	bool bInteractionDebugOutput = false;
 
 	UPROPERTY(
 		EditAnywhere,
@@ -165,18 +206,18 @@ public:
 			ToolTip = "是否绘制提示区域"
 		)
 	)
-	bool bDebugDraw = false;
+	bool bInteractionDebugDraw = false;
 
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互目标|属性",
 		meta = (
-			DisplayName = "调试绘制颜色",
-			ToolTip = "调试绘制时绘制的颜色"
+			DisplayName = "交互区域",
+			ToolTip = "射线检测区域"
 		)
 	)
-	FColor DebugDrawColor = FColor::Green;
+	UShapeComponent* InteractiveRange = nullptr;
 
 	UPROPERTY(
 		EditAnywhere,
@@ -197,19 +238,30 @@ public:
 		EditDefaultsOnly,
 		Category = "交互目标|子类引用",
 		meta = (
-			DisplayName = "提示UI",
-			ToolTip = "要绘制的交互提示的UI类"
+			DisplayName = "提示Widget",
+			ToolTip = "要绘制的交互提示的Widget类"
 		)
 	)
-	TSubclassOf<UUserWidget> PromptWidgetClass = nullptr;
+	TSubclassOf<UInteractionTargetWidget> PromptWidgetClass = nullptr;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		Category = "交互目标|子类引用",
+		meta = (
+			// MustImplement="HighlightInterface",
+			DisplayName = "高亮组件",
+			ToolTip = "高亮组件类"
+		)
+	)
+	TSubclassOf<UHighlightComponent> HighlightComponentClass = nullptr;
 
 #pragma endregion
 
-#pragma region 交互目标委托
+#pragma region 交互目标事件分发器
 
 	UPROPERTY(
 		BlueprintAssignable,
-		Category = "交互目标|委托",
+		Category = "交互目标|事件分发器",
 		meta = (
 			DisplayName = "交互时触发",
 			ToolTip = "当玩家与对象发生交互行为时触发此事件"
@@ -219,7 +271,27 @@ public:
 
 	UPROPERTY(
 		BlueprintAssignable,
-		Category = "交互目标|委托",
+		Category = "交互目标|事件分发器",
+		meta = (
+			DisplayName = "被注视时触发",
+			ToolTip = "当玩家注视该物体时触发此事件"
+		)
+	)
+	FOnBeginFocusedSignature OnBeginFocusedEvent{};
+
+	UPROPERTY(
+		BlueprintAssignable,
+		Category = "交互目标|事件分发器",
+		meta = (
+			DisplayName = "注视结束时触发",
+			ToolTip = "当玩家结束注视该物体时触发此事件"
+		)
+	)
+	FOnEndFocusedSignature OnEndFocusedEvent{};
+
+	UPROPERTY(
+		BlueprintAssignable,
+		Category = "交互目标|事件分发器",
 		meta = (
 			DisplayName = "玩家进入提示区域时触发",
 			ToolTip = "当玩家进入提示区域时触发此事件，提示区域参考交互选项的 PromptRange"
@@ -229,7 +301,7 @@ public:
 
 	UPROPERTY(
 		BlueprintAssignable,
-		Category = "交互目标|委托",
+		Category = "交互目标|事件分发器",
 		meta = (
 			DisplayName = "玩家离开提示区域时触发",
 			ToolTip = "当玩家离开提示区域时触发此事件，提示区域参考交互选项的 PromptRange"
@@ -239,7 +311,7 @@ public:
 
 #pragma endregion
 
-#pragma region 交互目标公共变量
+#pragma region 交互目标公开变量
 
 	bool bBlockInteraction = false;
 
@@ -268,9 +340,9 @@ protected:
 
 #pragma endregion
 
-#pragma region 交互目标提示区域接口
+#pragma region 交互目标蓝图虚函数
 
-	UFUNCTION(BlueprintNativeEvent, Category = "交互目标|接口")
+	UFUNCTION(BlueprintNativeEvent, Category = "交互目标|蓝图虚函数")
 	void OnPlayersEnterPromptArea(
 		UPrimitiveComponent* OverlappedComponent,
 		APawn* Pawn,
@@ -279,7 +351,7 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult
 	);
-	UFUNCTION(BlueprintNativeEvent, Category = "交互目标|接口")
+	UFUNCTION(BlueprintNativeEvent, Category = "交互目标|蓝图虚函数")
 	void OnPlayerLeavingPromptArea(
 		UPrimitiveComponent* OverlappedComponent,
 		APawn* Pawn,
@@ -290,10 +362,15 @@ protected:
 #pragma endregion
 
 private:
-#pragma region 交互目标提示区域回调
+#pragma region 交互目标事件回调函数
 
-	// 在外部开始重叠
-	UFUNCTION()
+	UFUNCTION(
+		Category="交互目标|事件回调函数",
+		meta = (
+			DisplayName = "当提示范围开始重叠",
+			ToolTip = "当提示范围开始重叠"
+		)
+	)
 	void OnPromptRangeBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -302,8 +379,14 @@ private:
 		bool bFromSweep,
 		const FHitResult& SweepResult
 	);
-	// 在外部结束重叠
-	UFUNCTION()
+
+	UFUNCTION(
+		Category="交互目标|事件回调函数",
+		meta = (
+			DisplayName = "当提示范围结束重叠",
+			ToolTip = "当提示范围结束重叠"
+		)
+	)
 	void OnPromptRangeEndOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -316,21 +399,19 @@ private:
 #pragma region 交互目标私有函数
 
 	void DrawDebugRange(UShapeComponent* DebugShapeComponent, FColor Color, float Duration) const;
-	void AddWidgetToScreen();
-	void RemoveWidgetFromScreen();
 
 #pragma endregion
 
 public:
 #pragma region IInteractableInterface 接口函数
 
-	virtual void OnBeginHover_Implementation(AActor* Interactor) override;
-	virtual void OnEndHover_Implementation(AActor* Interactor) override;
-	virtual void OnInteract_Implementation(AActor* Interactor, const FInputActionValue& Value) override;
+	virtual void OnBeginHover_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint) override;
+	virtual void OnEndHover_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint) override;
+	virtual void OnInteract_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint, const FInputActionValue& Value) override;
 
 #pragma endregion
 
-#pragma region 交互目标公有函数
+#pragma region 交互目标公开函数
 
 	UFUNCTION(
 		BlueprintCallable,
@@ -350,7 +431,7 @@ public:
 			ToolTip = "调用此函数时，属性 bBlockInteraction 将会设置为 false，交互管理器将可以与该组件交互。"
 		)
 	)
-	void EnableInteraction();
+	void UnlockInteraction();
 
 #pragma endregion
 };

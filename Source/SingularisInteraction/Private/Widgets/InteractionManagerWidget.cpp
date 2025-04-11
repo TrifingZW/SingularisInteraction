@@ -1,21 +1,22 @@
 /* =====================================================================
  * InteractionWidget.cpp
  * SPDX-License-Identifier: MIT
- * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
- * Copyright (c) 2024 TrifingZW
+ * Copyright (c) 2024-2025 TrifingZW
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "InteractionWidget.h"
+#include "Widgets/InteractionManagerWidget.h"
+
 #include "Components/Image.h"
 
-void UInteractionWidget::ShowWidget()
+void UInteractionManagerWidget::ShowWidget()
 {
 	SetVisibility(ESlateVisibility::Visible);
 }
 
-void UInteractionWidget::HideWidget()
+void UInteractionManagerWidget::HideWidget()
 {
 	SetVisibility(ESlateVisibility::Hidden);
 }

@@ -1,5 +1,5 @@
 /* =====================================================================
- * CircularProgressBar.h
+ * RingSight.h
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
@@ -11,22 +11,22 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "CircularProgressBar.generated.h"
+#include "RingSight.generated.h"
 
 class UImage;
 
 /**
- * 圆形进度条
+ * 圆环准星
  */
 UCLASS(Abstract, Blueprintable)
-class SINGULARISINTERACTION_API UCircularProgressBar : public UUserWidget
+class SINGULARISINTERACTION_API URingSight : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(
 		BlueprintReadWrite,
-		Category = "圆形进度条",
+		Category = "圆环准星",
 		meta = (BindWidget)
 	)
 	UImage* Image;
@@ -34,11 +34,22 @@ public:
 	UFUNCTION(
 		BlueprintImplementableEvent,
 		BlueprintCallable,
-		Category = "圆形进度条",
+		Category = "圆环准星",
 		meta = (
-			DisplayName = "设置百分比",
-			ToolTip = "当玩家长按时会调用此函数，并且会给一个进度值，你需要做的是设置进度条的进度"
+			DisplayName = "填充圆环",
+			ToolTip = "填充准星使其成为圆"
 		)
 	)
-	void SetPercent(float Percent);
+	void FillRing();
+
+	UFUNCTION(
+		BlueprintImplementableEvent,
+		BlueprintCallable,
+		Category = "圆环准星",
+		meta = (
+			DisplayName = "清空圆环",
+			ToolTip = "清空准星使其成为圆环"
+		)
+	)
+	void EmptyRing();
 };

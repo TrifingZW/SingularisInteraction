@@ -1,10 +1,10 @@
 /* =====================================================================
- * InteractionWidgetComponent.cpp
+ * RingSight.cpp
  * SPDX-License-Identifier: MIT
- * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
- * Copyright (c) 2024 TrifingZW
+ * Copyright (c) 2024-2025 TrifingZW
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "InteractionWidgetComponent.h"
+#include "Widgets/RingSight.h"

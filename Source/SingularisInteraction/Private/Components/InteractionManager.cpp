@@ -1,23 +1,24 @@
 /* =====================================================================
  * InteractionManager.cpp
  * SPDX-License-Identifier: MIT
- * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
- * Copyright (c) 2024 TrifingZW
+ * Copyright (c) 2024-2025 TrifingZW
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "InteractionManager.h"
+#include "Components/InteractionManager.h"
 
-#include "Engine.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "InteractableInterface.h"
-#include "InteractionTarget.h"
-#include "InteractionWidget.h"
 #include "TimerManager.h"
+#include "Components/InteractionTarget.h"
+#include "GameFramework/Pawn.h"
+#include "Interfaces/InteractableInterface.h"
+#include "Widgets/InteractionManagerWidget.h"
 
 #define LOCTEXT_NAMESPACE "InteractionManager"
+#define ECC_INTERACTABLE ECC_GameTraceChannel1
 
 // 设置该组件属性的默认值
 UInteractionManager::UInteractionManager()
@@ -88,7 +89,10 @@ void UInteractionManager::TickComponent(const float DeltaTime, const ELevelTick 
 void UInteractionManager::UpdateInteractionTarget()
 {
 	const APlayerController* PC = PlayerController.Get();
-	if (!PC) return;
+	if (!PC)
+	{
+		return;
+	}
 
 	// 获取摄像机参数
 	FVector CameraLoc;
@@ -99,7 +103,7 @@ void UInteractionManager::UpdateInteractionTarget()
 
 	// 射线检测参数
 	FCollisionQueryParams TraceParams;
-	TraceParams.AddIgnoredActor(GetOwner()); // 忽略玩家自身
+	TraceParams.AddIgnoredActor(Cast<AActor>(PC->GetPawn())); // 忽略玩家自身
 	TraceParams.bTraceComplex = true; // 检测复杂碰撞
 
 	FHitResult HitResult;
@@ -107,15 +111,15 @@ void UInteractionManager::UpdateInteractionTarget()
 		HitResult,
 		CameraLoc,
 		TraceEnd,
-		ECC_Visibility,
-		// 使用Visibility通道
+		ECC_INTERACTABLE,
 		TraceParams
 	);
 
 	// 处理交互目标
 	TWeakObjectPtr<UInteractionTarget> NewInteractionTarget = nullptr;
 
-	if (bHit)
+	// 旧版逻辑
+	/*if (bHit)
 		if (const AActor* HitActor = HitResult.GetActor())
 		{
 			// 获取所有交互组件
@@ -130,14 +134,38 @@ void UInteractionManager::UpdateInteractionTarget()
 					CameraRot,
 					HitResult.Location
 				);
+		}*/
+
+	if (bHit)
+	{
+		CurrentHitImpactPoint = HitResult.ImpactPoint;
+		if (const UPrimitiveComponent* PrimitiveComponent = HitResult.GetComponent())
+		{
+			if (PrimitiveComponent->ComponentHasTag("Interactable"))
+			{
+				if (UInteractionTarget* InteractionTarget = Cast<UInteractionTarget>(PrimitiveComponent->GetAttachParent()))
+				{
+					if (!InteractionTarget->bBlockInteraction)
+					{
+						NewInteractionTarget = InteractionTarget;
+					}
+				}
+			}
 		}
+	}
 
 	// 统一处理交互状态变化
 	if (NewInteractionTarget != CurrentInteractionTarget)
 	{
 		// 退出旧交互
 		if (CurrentInteractionTarget.IsValid())
-			CurrentInteractionTarget->Execute_OnEndHover(CurrentInteractionTarget.Get(), GetOwner());
+		{
+			CurrentInteractionTarget->Execute_OnEndHover(
+				CurrentInteractionTarget.Get(),
+				GetOwner(),
+				CurrentHitImpactPoint
+			);
+		}
 
 		// 更新当前交互目标
 		CurrentInteractionTarget = NewInteractionTarget;
@@ -145,23 +173,39 @@ void UInteractionManager::UpdateInteractionTarget()
 		// 进入新交互
 		if (CurrentInteractionTarget.IsValid())
 		{
-			CurrentInteractionTarget->Execute_OnBeginHover(CurrentInteractionTarget.Get(), GetOwner());
+			if (InteractionManagerWidget)
+			{
+				InteractionManagerWidget->UpdateDetection(CurrentInteractionTarget.Get());
+			}
+			CurrentInteractionTarget->Execute_OnBeginHover(
+				CurrentInteractionTarget.Get(),
+				GetOwner(),
+				CurrentHitImpactPoint
+			);
 			UpdateHintText(CurrentInteractionTarget.Get());
+		}
+		else
+		{
+			if (InteractionManagerWidget)
+			{
+				InteractionManagerWidget->NoDetection();
+			}
 		}
 	}
 }
 
 void UInteractionManager::UpdateInteractionWidget()
 {
-	// 更新交互 UI 可见性
 	if (CurrentInteractionTarget.IsValid())
 	{
-		InteractionWidget->ShowWidget();
 		// 更新交互 UI 长按进度
 		UpdateHoldProgress();
 	}
-	else
-		InteractionWidget->HideWidget();
+	else if (IsProgress)
+	{
+		IsProgress = false;
+		InteractionManagerWidget->HideProgressBar();
+	}
 }
 
 void UInteractionManager::UpdateHoldProgress()
@@ -171,14 +215,22 @@ void UInteractionManager::UpdateHoldProgress()
 	{
 		const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(HoldTimerHandle);
 		HoldProgress = ElapsedTime / HoldTotalDuration;
-		InteractionWidget->ShowProgressBar();
-		InteractionWidget->SetHoldProgress(HoldProgress);
+
+		if (InteractionManagerWidget)
+		{
+			InteractionManagerWidget->ShowProgressBar();
+			InteractionManagerWidget->SetHoldProgress(HoldProgress);
+		}
 	}
 	else
 	{
 		HoldProgress = 0.0f; // 重置长按进度
 		HoldTotalDuration = 0.0f; // 重置总持续时间
-		InteractionWidget->HideProgressBar();
+
+		if (InteractionManagerWidget)
+		{
+			InteractionManagerWidget->HideProgressBar();
+		}
 	}
 }
 
@@ -199,10 +251,13 @@ void UInteractionManager::UpdateHintText(const UInteractionTarget* InteractionTa
 	);
 
 	// 设置到UI控件
-	InteractionWidget->SetHintText(FormattedHint);
+	if (InteractionManagerWidget)
+	{
+		InteractionManagerWidget->SetHintText(FormattedHint);
+	}
 }
 
-TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
+/*TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 	const TArray<UInteractionTarget*>& Candidates,
 	const FVector& CameraLocation,
 	const FRotator& CameraRotation,
@@ -217,14 +272,18 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 	{
 		// 如果交互目标启用了阻断交互则跳过
 		if (Candidate->bBlockInteraction)
+		{
 			continue;
+		}
 
 		// 综合评分系统
 		auto Score = 0.0f;
 
 		// 1. 组件优先级（如果有）
-		if (Candidate->bUsePriority)
+		if (Candidate->bUseInteractionPriority)
+		{
 			Score += Candidate->InteractionPriority * 1000.0f;
+		}
 
 		// 2. 距离到射线命中点
 		const float DistanceToHit = FVector::DistSquared(
@@ -261,54 +320,65 @@ TWeakObjectPtr<UInteractionTarget> UInteractionManager::FindBestInteractable(
 	}
 
 	return BestCandidate;
-}
+}*/
 
 void UInteractionManager::CreateInteractionWidget()
 {
 	// 创建交互 UI 实例
-	InteractionWidget = CreateWidget<UInteractionWidget>(PlayerController.Get(), InteractionWidgetClass);
+	if (InteractionWidgetClass)
+	{
+		InteractionManagerWidget = CreateWidget<UInteractionManagerWidget>(PlayerController.Get(), InteractionWidgetClass);
+	}
 
 	// 添加到视口顶层（ZOrder值越大层级越高）
-	if (InteractionWidget)
+	if (InteractionManagerWidget)
 	{
-		InteractionWidget->AddToViewport(100); // 设置足够高的ZOrder值
-		InteractionWidget->HideWidget(); // 初始隐藏
+		InteractionManagerWidget->AddToViewport(100); // 设置足够高的ZOrder值
+		// InteractionManagerWidget->HideWidget(); // 初始隐藏
 	}
 }
 
 void UInteractionManager::BindInput()
 {
 	if (!InteractiveInputMappingContext || !InteractiveInputAction)
+	{
 		return;
+	}
 
 	// 添加输入映射上下文
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
 		PlayerController->GetLocalPlayer()
 	))
+	{
 		Subsystem->AddMappingContext(InteractiveInputMappingContext, InputPriority);
+	}
 
 	// 绑定输入动作
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
 	{
-		EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Triggered, this, &UInteractionManager::HandleTriggered);
+		EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Started, this, &UInteractionManager::HandleTriggered);
 		EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Completed, this, &UInteractionManager::HandleCompleted);
-		// EnhancedInput->BindAction(InteractiveInputAction, ETriggerEvent::Ongoing, this, &UInteractionManager::HandleOngoing);
 	}
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
+// ReSharper disable once CppMemberFunctionMayB eConst
 void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 {
 	if (!CurrentInteractionTarget.IsValid())
+	{
 		return;
+	}
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 		if (InteractionType == EInteractionType::Press)
-			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
+		{
+			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
+		}
 		if (InteractionType == EInteractionType::Hold)
 		{
+			IsProgress = true;
 			HoldTotalDuration = ActiveInteractionTarget->InteractionConfig.HoldDuration;
 			GetWorld()->GetTimerManager().SetTimer(
 				HoldTimerHandle,
@@ -326,14 +396,20 @@ void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 {
 	if (!CurrentInteractionTarget.IsValid())
+	{
+		IsProgress = false;
+		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 		return;
+	}
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 		if (InteractionType == EInteractionType::Release)
-			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), Value);
-
+		{
+			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
+		}
+		IsProgress = false;
 		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 	}
 }
@@ -342,25 +418,30 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 void UInteractionManager::HandleHold()
 {
 	if (!CurrentInteractionTarget.IsValid())
+	{
 		return;
+	}
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
-		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), {});
+	{
+		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, {});
+	}
 }
 
-void UInteractionManager::CloseInteraction()
+void UInteractionManager::DisableInteraction()
 {
 	bCanInteract = false;
 	HoldProgress = 0.0f;
 	HoldTotalDuration = 0.0f;
-	InteractionWidget->HideProgressBar();
-	InteractionWidget->HideWidget();
+	CurrentInteractionTarget = nullptr;
+	InteractionManagerWidget->HideProgressBar();
+	InteractionManagerWidget->EnableSpecialState();
 	GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 }
 
 void UInteractionManager::EnableInteraction()
 {
 	bCanInteract = true;
-	InteractionWidget->ShowWidget();
+	InteractionManagerWidget->DisableSpecialState();
 }
 
 FText UInteractionManager::GetInteractionTypeText(EInteractionType Type)

@@ -1,9 +1,9 @@
 /* =====================================================================
  * InteractionWidgetComponent.h
  * SPDX-License-Identifier: MIT
- * SPDX-FileCopyrightText: 2024 TrifingZW <TrifingZW@gmail.com>
+ * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
- * Copyright (c) 2024 TrifingZW
+ * Copyright (c) 2024-2025 TrifingZW
  * Licensed under MIT License
  * ===================================================================== */
 
@@ -14,7 +14,7 @@
 #include "InteractionWidgetComponent.generated.h"
 
 /**
- * 
+ * 交互 Widget 组件
  */
 UCLASS()
 class SINGULARISINTERACTION_API UInteractionWidgetComponent : public UWidgetComponent
