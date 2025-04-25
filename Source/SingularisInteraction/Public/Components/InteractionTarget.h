@@ -9,20 +9,23 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "HighlightComponent.h"
-#include "InteractionConfig.h"
-#include "Components/SceneComponent.h"
-#include "Components/ShapeComponent.h"
-#include "Interfaces/InteractableInterface.h"
+#include <CoreMinimal.h>
+#include <Components/ActorComponent.h>
+#include <Components/ShapeComponent.h>
+
+#include "Interfaces/InteractionInterface.h"
+#include "Systems/InteractionConfig.h"
 #include "InteractionTarget.generated.h"
 
-class IHighlightInterface;
+class UHighlightComponent;
+class UInteractionTarget;
 class UInteractionTargetWidget;
-class UWidgetComponent;
 class UInteractionManager;
+class UWidgetComponent;
 
 #pragma region 委托签名
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractionTargetReadySignature);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(
 	FOnInteractionSignature,
@@ -89,94 +92,75 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(
 /**
  * 交互目标
  */
-UCLASS(Blueprintable, ClassGroup=("引力奇点交互插件"), meta=(BlueprintSpawnableComponent))
-class SINGULARISINTERACTION_API UInteractionTarget : public USceneComponent, public IInteractableInterface
+UCLASS(
+	Blueprintable,
+	ClassGroup = ("引力奇点交互插件"),
+	meta = (BlueprintSpawnableComponent, DisplayName = "交互目标")
+)
+class SINGULARISINTERACTION_API UInteractionTarget : public UActorComponent, public IInteractionInterface
 {
 	GENERATED_BODY()
 
 public:
-#pragma region 交互目标持有实例
+#pragma region 持有实例
 
 	UPROPERTY(
 		BlueprintReadOnly,
 		Category = "交互目标|持有实例",
-		meta = (
-			EditHide,
-			DisplayName = "高亮组件",
-			ToolTip = "交互目标持有的高亮组件"
-		)
+		meta = (DisplayName = "高亮组件")
 	)
 	UHighlightComponent* HighlightComponent = nullptr;
 
 	UPROPERTY(
 		BlueprintReadOnly,
 		Category = "交互目标|持有实例",
-		meta = (
-			EditHide,
-			DisplayName = "控件组件",
-			ToolTip = "交互目标持有的控件组件"
-		)
+		meta = (DisplayName = "控件组件")
 	)
 	UWidgetComponent* WidgetComponent = nullptr;
 
 #pragma endregion
 
-#pragma region 交互目标属性
+#pragma region 属性
 
 	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
+		EditDefaultsOnly,
+		BlueprintReadOnly,
 		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "交互标题",
-			ToolTip = "该交互的标题"
-		)
+		meta = (DisplayName = "交互标题")
 	)
-	FText InteractionTitle = FText::FromString(TEXT("物品拾取"));
+	FText InteractionTitle = FText::FromString(TEXT("物品交互"));
 
 	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
+		EditDefaultsOnly,
+		BlueprintReadOnly,
 		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "交互配置",
-			ToolTip = "该交互的配置"
-		)
+		meta = (DisplayName = "交互图元")
+	)
+	TArray<FComponentReference> InteractionPrimitives{};
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性",
+		meta = (DisplayName = "交互配置")
 	)
 	FInteractionConfig InteractionConfig{};
 
-	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "启用交互优先级",
-			ToolTip = "启用交互优先级"
-		)
+	/*UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|交互优先级",
+		meta = (DisplayName = "启用交互优先级")
 	)
 	bool bUseInteractionPriority = false;
 
 	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "交互优先级",
-			ToolTip = "当一个物体拥有多个交互目标组件时，优先级高的组件会被优先执行交互事件"
-		)
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|交互优先级",
+		meta = (DisplayName = "交互优先级", EditCondition = "bUseInteractionPriority")
 	)
-	int32 InteractionPriority = 0;
-
-	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "轮廓高亮",
-			ToolTip = "是否在物体出现在玩家视线上时触发高亮效果"
-		)
-	)
-	bool bInteractionHighlight = true;
+	int32 InteractionPriority = 0;*/
 
 	/*UPROPERTY(EditAnywhere,
 		Category = "交互选项",
@@ -187,222 +171,129 @@ public:
 	FColor HighlightColor = FColor::Yellow;*/
 
 	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "调试输出",
-			ToolTip = "是否输出调试信息"
-		)
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|轮廓高亮",
+		meta = (DisplayName = "启用轮廓高亮")
+	)
+	bool bIsHighlight = false;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|轮廓高亮",
+		meta = (DisplayName = "高亮图元", EditCondition = "bIsHighlight")
+	)
+	TArray<FComponentReference> HighlightPrimitives{};
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|区域提示",
+		meta = (DisplayName = "启用区域提示")
+	)
+	bool bIsPrompt = false;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|区域提示",
+		meta = (DisplayName = "提示区域", EditCondition = "bIsPrompt")
+	)
+	FComponentReference PromptAreaReference{};
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|调试设置",
+		meta = (DisplayName = "调试输出")
 	)
 	bool bInteractionDebugOutput = false;
 
 	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "调试绘制",
-			ToolTip = "是否绘制提示区域"
-		)
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "交互目标|属性|调试设置",
+		meta = (DisplayName = "调试绘制")
 	)
 	bool bInteractionDebugDraw = false;
 
-	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "交互区域",
-			ToolTip = "射线检测区域"
-		)
-	)
-	UShapeComponent* InteractiveRange = nullptr;
-
-	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadWrite,
-		Category = "交互目标|属性",
-		meta = (
-			DisplayName = "提示区域",
-			ToolTip = "如果玩家在此区域内会绘制交互提示UI"
-		)
-	)
-	UShapeComponent* PromptRange = nullptr;
-
 #pragma endregion
 
-#pragma region 交互目标子类引用
+#pragma region 子类引用
 
 	UPROPERTY(
 		EditDefaultsOnly,
 		Category = "交互目标|子类引用",
-		meta = (
-			DisplayName = "提示Widget",
-			ToolTip = "要绘制的交互提示的Widget类"
-		)
+		meta = (DisplayName = "交互目标控件类")
 	)
-	TSubclassOf<UInteractionTargetWidget> PromptWidgetClass = nullptr;
-
-	UPROPERTY(
-		EditDefaultsOnly,
-		Category = "交互目标|子类引用",
-		meta = (
-			// MustImplement="HighlightInterface",
-			DisplayName = "高亮组件",
-			ToolTip = "高亮组件类"
-		)
-	)
-	TSubclassOf<UHighlightComponent> HighlightComponentClass = nullptr;
+	TSubclassOf<UInteractionTargetWidget> InteractionTargetWidgetClass = nullptr;
 
 #pragma endregion
 
-#pragma region 交互目标事件分发器
+#pragma region 事件分发器
 
 	UPROPERTY(
 		BlueprintAssignable,
 		Category = "交互目标|事件分发器",
-		meta = (
-			DisplayName = "交互时触发",
-			ToolTip = "当玩家与对象发生交互行为时触发此事件"
-		)
+		meta = (DisplayName = "交互目标准备就绪时触发")
+	)
+	FOnInteractionTargetReadySignature OnInteractionTargetReadyEvent{};
+
+	UPROPERTY(
+		BlueprintAssignable,
+		Category = "交互目标|事件分发器",
+		meta = (DisplayName = "交互时触发")
 	)
 	FOnInteractionSignature OnInteractionEvent{};
 
 	UPROPERTY(
 		BlueprintAssignable,
 		Category = "交互目标|事件分发器",
-		meta = (
-			DisplayName = "被注视时触发",
-			ToolTip = "当玩家注视该物体时触发此事件"
-		)
+		meta = (DisplayName = "被注视时触发")
 	)
 	FOnBeginFocusedSignature OnBeginFocusedEvent{};
 
 	UPROPERTY(
 		BlueprintAssignable,
 		Category = "交互目标|事件分发器",
-		meta = (
-			DisplayName = "注视结束时触发",
-			ToolTip = "当玩家结束注视该物体时触发此事件"
-		)
+		meta = (DisplayName = "注视结束时触发")
 	)
 	FOnEndFocusedSignature OnEndFocusedEvent{};
 
 	UPROPERTY(
 		BlueprintAssignable,
 		Category = "交互目标|事件分发器",
-		meta = (
-			DisplayName = "玩家进入提示区域时触发",
-			ToolTip = "当玩家进入提示区域时触发此事件，提示区域参考交互选项的 PromptRange"
-		)
+		meta = (DisplayName = "玩家进入提示区域时触发")
 	)
 	FOnPlayersEnterPromptAreaSignature OnPlayersEnterPromptAreaEvent{};
 
 	UPROPERTY(
 		BlueprintAssignable,
 		Category = "交互目标|事件分发器",
-		meta = (
-			DisplayName = "玩家离开提示区域时触发",
-			ToolTip = "当玩家离开提示区域时触发此事件，提示区域参考交互选项的 PromptRange"
-		)
+		meta = (DisplayName = "玩家离开提示区域时触发")
 	)
 	FOnPlayerLeavingPromptAreaSignature OnPlayerLeavingPromptAreaEvent{};
 
 #pragma endregion
 
-#pragma region 交互目标公开变量
-
-	bool bBlockInteraction = false;
-
-#pragma endregion
-
 private:
-#pragma region 交互目标私有变量
+#pragma region 私有数据成员
 
-	TWeakObjectPtr<UInteractionManager> InteractionManager = nullptr;
+	TWeakObjectPtr<UShapeComponent> PromptArea = nullptr;
+	bool bBlockInteraction = true;
 
 #pragma endregion
 
 public:
-#pragma region 公共常规函数
+#pragma region 常规函数
 
 	UInteractionTarget();
-	virtual void OnRegister() override;
-
-#pragma endregion
-
-protected:
-#pragma region 保护常规函数
-
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 #pragma endregion
 
-#pragma region 交互目标蓝图虚函数
-
-	UFUNCTION(BlueprintNativeEvent, Category = "交互目标|蓝图虚函数")
-	void OnPlayersEnterPromptArea(
-		UPrimitiveComponent* OverlappedComponent,
-		APawn* Pawn,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex,
-		bool bFromSweep,
-		const FHitResult& SweepResult
-	);
-	UFUNCTION(BlueprintNativeEvent, Category = "交互目标|蓝图虚函数")
-	void OnPlayerLeavingPromptArea(
-		UPrimitiveComponent* OverlappedComponent,
-		APawn* Pawn,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex
-	);
-
-#pragma endregion
-
-private:
-#pragma region 交互目标事件回调函数
-
-	UFUNCTION(
-		Category="交互目标|事件回调函数",
-		meta = (
-			DisplayName = "当提示范围开始重叠",
-			ToolTip = "当提示范围开始重叠"
-		)
-	)
-	void OnPromptRangeBeginOverlap(
-		UPrimitiveComponent* OverlappedComponent,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex,
-		bool bFromSweep,
-		const FHitResult& SweepResult
-	);
-
-	UFUNCTION(
-		Category="交互目标|事件回调函数",
-		meta = (
-			DisplayName = "当提示范围结束重叠",
-			ToolTip = "当提示范围结束重叠"
-		)
-	)
-	void OnPromptRangeEndOverlap(
-		UPrimitiveComponent* OverlappedComponent,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex
-	);
-
-#pragma endregion
-
-#pragma region 交互目标私有函数
-
-	void DrawDebugRange(UShapeComponent* DebugShapeComponent, FColor Color, float Duration) const;
-
-#pragma endregion
-
-public:
 #pragma region IInteractableInterface 接口函数
 
 	virtual void OnBeginHover_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint) override;
@@ -411,27 +302,57 @@ public:
 
 #pragma endregion
 
-#pragma region 交互目标公开函数
+#pragma region 公开函数
 
 	UFUNCTION(
 		BlueprintCallable,
-		Category="交互目标|函数",
-		meta = (
-			DisplayName = "阻断交互",
-			ToolTip = "调用此函数时，属性 bBlockInteraction 将会设置为 true，交互管理器将无法与该组件交互，该组件的事件会被阻塞，并且隐藏提示范围，提示UI等。"
-		)
+		Category = "交互目标|函数",
+		meta = (DisplayName = "交互状态")
+	)
+	bool IsBlockInteraction() const;
+
+	UFUNCTION(
+		BlueprintCallable,
+		Category = "交互目标|函数",
+		meta = (DisplayName = "阻断交互")
 	)
 	void BlockInteraction();
 
 	UFUNCTION(
 		BlueprintCallable,
-		Category="交互目标|函数",
-		meta = (
-			DisplayName = "启用交互",
-			ToolTip = "调用此函数时，属性 bBlockInteraction 将会设置为 false，交互管理器将可以与该组件交互。"
-		)
+		Category = "交互目标|函数",
+		meta = (DisplayName = "启用交互")
 	)
 	void UnlockInteraction();
+
+#pragma endregion
+
+private:
+#pragma region 事件回调函数
+
+	UFUNCTION()
+	void OnPromptAreaBeginOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
+
+	UFUNCTION()
+	void OnPromptRangeAreaOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
+
+#pragma endregion
+
+#pragma region 私有函数
+
+	void DrawDebugRange(UShapeComponent* DebugShapeComponent, FColor Color, float Duration) const;
 
 #pragma endregion
 };

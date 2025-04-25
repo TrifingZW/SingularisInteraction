@@ -1,5 +1,5 @@
 /* =====================================================================
- * InteractionWidgetComponent.h
+ * InteractableInterface.cpp
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
@@ -7,17 +7,6 @@
  * Licensed under MIT License
  * ===================================================================== */
 
-#pragma once
+#include "Interfaces/InteractionInterface.h"
 
-#include "CoreMinimal.h"
-#include "Components/WidgetComponent.h"
-#include "InteractionWidgetComponent.generated.h"
-
-/**
- * 交互 Widget 组件
- */
-UCLASS()
-class SINGULARISINTERACTION_API UInteractionWidgetComponent : public UWidgetComponent
-{
-	GENERATED_BODY()
-};
+// 在此为 IInteractionInterface 中的非纯虚函数提供默认实现

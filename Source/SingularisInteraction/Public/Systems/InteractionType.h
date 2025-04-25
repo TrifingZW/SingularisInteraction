@@ -9,7 +9,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include <CoreMinimal.h>
+
 #include "InteractionType.generated.h"
 
 /**

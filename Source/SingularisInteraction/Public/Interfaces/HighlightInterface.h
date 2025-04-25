@@ -9,8 +9,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "UObject/Interface.h"
+#include <CoreMinimal.h>
+#include <UObject/Interface.h>
+
 #include "HighlightInterface.generated.h"
 
 // 此类不需要修改
@@ -30,23 +31,15 @@ class SINGULARISINTERACTION_API IHighlightInterface
 public:
 	UFUNCTION(
 		BlueprintNativeEvent,
-		BlueprintCallable,
-		Category="高亮接口",
-		meta = (
-			DisplayName = "开启高亮",
-			ToolTip = "开启高亮"
-		)
+		Category = "高亮接口",
+		meta = (DisplayName = "开启高亮")
 	)
 	void EnableHighlight(AActor* Actor);
 
 	UFUNCTION(
 		BlueprintNativeEvent,
-		BlueprintCallable,
-		Category="高亮接口",
-		meta = (
-			DisplayName = "关闭高亮",
-			ToolTip = "关闭高亮"
-		)
+		Category = "高亮接口",
+		meta = (DisplayName = "关闭高亮")
 	)
 	void DisableHighlight(AActor* Actor);
 };

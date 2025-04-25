@@ -10,13 +10,3 @@
 #include "Widgets/InteractionManagerWidget.h"
 
 #include "Components/Image.h"
-
-void UInteractionManagerWidget::ShowWidget()
-{
-	SetVisibility(ESlateVisibility::Visible);
-}
-
-void UInteractionManagerWidget::HideWidget()
-{
-	SetVisibility(ESlateVisibility::Hidden);
-}

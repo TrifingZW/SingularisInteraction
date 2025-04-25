@@ -9,8 +9,9 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include <CoreMinimal.h>
+#include <Blueprint/UserWidget.h>
+
 #include "CircularProgressBar.generated.h"
 
 class UImage;
@@ -35,10 +36,7 @@ public:
 		BlueprintImplementableEvent,
 		BlueprintCallable,
 		Category = "圆形进度条",
-		meta = (
-			DisplayName = "设置百分比",
-			ToolTip = "当玩家长按时会调用此函数，并且会给一个进度值，你需要做的是设置进度条的进度"
-		)
+		meta = (DisplayName = "设置百分比")
 	)
 	void SetPercent(float Percent);
 };

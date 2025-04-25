@@ -9,16 +9,17 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Engine/NetSerialization.h"
-#include "UObject/Interface.h"
-#include "InteractableInterface.generated.h"
+#include <CoreMinimal.h>
+#include <Engine/NetSerialization.h>
+#include <UObject/Interface.h>
+
+#include "InteractionInterface.generated.h"
 
 struct FInputActionValue;
 
 // 此类不需要修改
 UINTERFACE(MinimalAPI)
-class UInteractableInterface : public UInterface
+class UInteractionInterface : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -26,7 +27,7 @@ class UInteractableInterface : public UInterface
 /**
  * 交互接口
  */
-class SINGULARISINTERACTION_API IInteractableInterface
+class SINGULARISINTERACTION_API IInteractionInterface
 {
 	GENERATED_BODY()
 

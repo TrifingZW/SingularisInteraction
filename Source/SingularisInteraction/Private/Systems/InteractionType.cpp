@@ -1,5 +1,5 @@
 /* =====================================================================
- * InteractionWidgetComponent.cpp
+ * InteractionTarget.cpp
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: 2024-2025 TrifingZW <TrifingZW@gmail.com>
  * 
@@ -7,4 +7,4 @@
  * Licensed under MIT License
  * ===================================================================== */
 
-#include "Components/InteractionWidgetComponent.h"
+#include "Systems/InteractionType.h"

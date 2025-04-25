@@ -14,34 +14,25 @@
 #include "TimerManager.h"
 #include "Components/InteractionTarget.h"
 #include "GameFramework/Pawn.h"
-#include "Interfaces/InteractableInterface.h"
+#include "Interfaces/InteractionInterface.h"
 #include "Widgets/InteractionManagerWidget.h"
 
 #define LOCTEXT_NAMESPACE "InteractionManager"
 #define ECC_INTERACTABLE ECC_GameTraceChannel1
 
-// 设置该组件属性的默认值
 UInteractionManager::UInteractionManager()
 {
-	// 设置该组件在游戏开始时初始化，并在每一帧进行更新。如果不需要这些功能，
-	// 可以关闭它们以提高性能。
-	PrimaryComponentTick.bCanEverTick = true; // 启用 Tick
-
-	// 初始化 Hold 值
-	HoldProgress = 0.0f;
-	HoldTotalDuration = 0.0f;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
 void UInteractionManager::OnRegister()
 {
-	Super::OnRegister(); // 必须调用父类方法
+	Super::OnRegister();
 
-	// 核心检查逻辑
-	PlayerController = Cast<APlayerController>(GetOwner()); // 转换为成员变量赋值
+	PlayerController = Cast<APlayerController>(GetOwner());
 	if (PlayerController == nullptr)
 	{
-		// 检查是否转换成功
-		// 错误处理
 		ensureMsgf(
 			false,
 			TEXT("组件[UMyComponent]必须附加到APlayerController上！当前Owner：%s"),
@@ -57,8 +48,6 @@ void UInteractionManager::OnRegister()
 	}
 }
 
-
-// 当游戏开始时调用
 void UInteractionManager::BeginPlay()
 {
 	Super::BeginPlay();
@@ -68,15 +57,16 @@ void UInteractionManager::BeginPlay()
 
 	// 设置交互 UI 实例
 	CreateInteractionWidget();
+
+	// 准备就绪！
+	OnInteractionManagerReadyEvent.Broadcast();
 }
 
-
-// 每一帧调用
 void UInteractionManager::TickComponent(const float DeltaTime, const ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (bCanInteract)
+	if (bCanInteraction)
 	{
 		// 更新交互目标
 		UpdateInteractionTarget();
@@ -99,14 +89,14 @@ void UInteractionManager::UpdateInteractionTarget()
 	FRotator CameraRot;
 	PC->GetPlayerViewPoint(CameraLoc, CameraRot);
 
-	const FVector TraceEnd = CameraLoc + (CameraRot.Vector() * InteractionDistance);
+	const FVector TraceEnd = CameraLoc + CameraRot.Vector() * InteractionDistance;
 
 	// 射线检测参数
+	FHitResult HitResult;
 	FCollisionQueryParams TraceParams;
 	TraceParams.AddIgnoredActor(Cast<AActor>(PC->GetPawn())); // 忽略玩家自身
 	TraceParams.bTraceComplex = true; // 检测复杂碰撞
 
-	FHitResult HitResult;
 	const bool bHit = GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		CameraLoc,
@@ -141,11 +131,13 @@ void UInteractionManager::UpdateInteractionTarget()
 		CurrentHitImpactPoint = HitResult.ImpactPoint;
 		if (const UPrimitiveComponent* PrimitiveComponent = HitResult.GetComponent())
 		{
-			if (PrimitiveComponent->ComponentHasTag("Interactable"))
+			if (PrimitiveComponent->ComponentHasTag("Interaction"))
 			{
-				if (UInteractionTarget* InteractionTarget = Cast<UInteractionTarget>(PrimitiveComponent->GetAttachParent()))
+				if (UInteractionTarget* InteractionTarget = Cast<UInteractionTarget>(
+					PrimitiveComponent->GetOwner()->FindComponentByClass(UInteractionTarget::StaticClass())
+				))
 				{
-					if (!InteractionTarget->bBlockInteraction)
+					if (!InteractionTarget->IsBlockInteraction())
 					{
 						NewInteractionTarget = InteractionTarget;
 					}
@@ -204,7 +196,11 @@ void UInteractionManager::UpdateInteractionWidget()
 	else if (IsProgress)
 	{
 		IsProgress = false;
-		InteractionManagerWidget->HideProgressBar();
+
+		if (InteractionManagerWidget)
+		{
+			InteractionManagerWidget->HideProgressBar();
+		}
 	}
 }
 
@@ -324,34 +320,20 @@ void UInteractionManager::UpdateHintText(const UInteractionTarget* InteractionTa
 
 void UInteractionManager::CreateInteractionWidget()
 {
-	// 创建交互 UI 实例
-	if (InteractionWidgetClass)
-	{
+	if (PlayerController.IsValid() && InteractionWidgetClass)
 		InteractionManagerWidget = CreateWidget<UInteractionManagerWidget>(PlayerController.Get(), InteractionWidgetClass);
-	}
 
-	// 添加到视口顶层（ZOrder值越大层级越高）
 	if (InteractionManagerWidget)
-	{
-		InteractionManagerWidget->AddToViewport(100); // 设置足够高的ZOrder值
-		// InteractionManagerWidget->HideWidget(); // 初始隐藏
-	}
+		InteractionManagerWidget->AddToViewport(100);
 }
 
 void UInteractionManager::BindInput()
 {
-	if (!InteractiveInputMappingContext || !InteractiveInputAction)
-	{
-		return;
-	}
+	if (!PlayerController.IsValid() || !InteractiveInputMappingContext || !InteractiveInputAction) return;
 
-	// 添加输入映射上下文
-	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
-		PlayerController->GetLocalPlayer()
-	))
-	{
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		Subsystem->AddMappingContext(InteractiveInputMappingContext, InputPriority);
-	}
 
 	// 绑定输入动作
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
@@ -364,18 +346,15 @@ void UInteractionManager::BindInput()
 // ReSharper disable once CppMemberFunctionMayB eConst
 void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 {
-	if (!CurrentInteractionTarget.IsValid())
-	{
-		return;
-	}
+	if (!CurrentInteractionTarget.IsValid()) return;
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
+
 		if (InteractionType == EInteractionType::Press)
-		{
 			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
-		}
+
 		if (InteractionType == EInteractionType::Hold)
 		{
 			IsProgress = true;
@@ -385,8 +364,7 @@ void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 				this,
 				&UInteractionManager::HandleHold,
 				ActiveInteractionTarget->InteractionConfig.HoldDuration,
-				// 动态时间阈值
-				false // 不循环
+				false
 			);
 		}
 	}
@@ -406,9 +384,7 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 		if (InteractionType == EInteractionType::Release)
-		{
 			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
-		}
 		IsProgress = false;
 		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 	}
@@ -417,34 +393,88 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 // ReSharper disable once CppMemberFunctionMayBeConst
 void UInteractionManager::HandleHold()
 {
-	if (!CurrentInteractionTarget.IsValid())
-	{
-		return;
-	}
+	if (!CurrentInteractionTarget.IsValid()) return;
+
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
-	{
 		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, {});
-	}
 }
 
 void UInteractionManager::DisableInteraction()
 {
-	bCanInteract = false;
+	if (!bCanInteraction) return;
+
+	bCanInteraction = false;
 	HoldProgress = 0.0f;
 	HoldTotalDuration = 0.0f;
 	CurrentInteractionTarget = nullptr;
-	InteractionManagerWidget->HideProgressBar();
-	InteractionManagerWidget->EnableSpecialState();
 	GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
+
+	if (InteractionManagerWidget)
+		InteractionManagerWidget->HideProgressBar();
 }
 
 void UInteractionManager::EnableInteraction()
 {
-	bCanInteract = true;
-	InteractionManagerWidget->DisableSpecialState();
+	if (bCanInteraction) return;
+
+	bCanInteraction = true;
+
+	if (InteractionManagerWidget)
+		InteractionManagerWidget->ShowWidget();
 }
 
-FText UInteractionManager::GetInteractionTypeText(EInteractionType Type)
+void UInteractionManager::ShowInteractionManagerWidget() const
+{
+	if (InteractionManagerWidget)
+		InteractionManagerWidget->ShowWidget();
+}
+
+void UInteractionManager::HideInteractionManagerWidget() const
+{
+	if (InteractionManagerWidget)
+		InteractionManagerWidget->HideWidget();
+}
+
+void UInteractionManager::EnterSpecialState() const
+{
+	if (InteractionManagerWidget)
+		InteractionManagerWidget->EnableSpecialState();
+}
+
+void UInteractionManager::ExitSpecialState() const
+{
+	if (InteractionManagerWidget)
+		InteractionManagerWidget->DisableSpecialState();
+}
+
+/*void UInteractionManager::SetInteractionManagerWidget(UInteractionManagerWidget* NewInteractionManagerWidget)
+{
+	if (InteractionManagerWidget)
+	{
+		InteractionManagerWidget->RemoveFromParent();
+		InteractionManagerWidget = nullptr;
+	}
+
+	InteractionManagerWidget = NewInteractionManagerWidget;
+
+	if (InteractionManagerWidget)
+	{
+		InteractionManagerWidget->AddToViewport(100);
+	}
+}
+
+void UInteractionManager::ResetInteractionManagerWidget()
+{
+	if (InteractionManagerWidget)
+	{
+		InteractionManagerWidget->RemoveFromParent();
+		InteractionManagerWidget = nullptr;
+	}
+
+	CreateInteractionWidget();
+}*/
+
+FText UInteractionManager::GetInteractionTypeText(const EInteractionType Type)
 {
 	switch (Type)
 	{

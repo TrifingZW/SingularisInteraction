@@ -9,14 +9,15 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include <CoreMinimal.h>
+
 #include "InteractionType.h"
-#include "InteractionConfig.generated.h"
+
+#include <InteractionConfig.generated.h>
 
 /**
  * 交互配置结构体
  */
-
 enum class EInteractionType : uint8;
 
 USTRUCT(BlueprintType)
@@ -28,10 +29,7 @@ struct SINGULARISINTERACTION_API FInteractionConfig
 		EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互",
-		meta = (
-			DisplayName = "交互类型",
-			ToolTip = "该交互目标的交互类型，列如：按下，松开，长按等。"
-		)
+		meta = (DisplayName = "交互类型")
 	)
 	EInteractionType InteractionType = EInteractionType::Press;
 
@@ -39,10 +37,7 @@ struct SINGULARISINTERACTION_API FInteractionConfig
 		EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互",
-		meta = (
-			DisplayName = "长按时间",
-			ToolTip = "如果交互类型是长按触发，则该值决定了长按的时间阈值。"
-		)
+		meta = (DisplayName = "长按时间")
 	)
 	float HoldDuration = 0.5f;
 
@@ -50,10 +45,7 @@ struct SINGULARISINTERACTION_API FInteractionConfig
 		EditAnywhere,
 		BlueprintReadWrite,
 		Category = "交互",
-		meta = (
-			DisplayName = "连击次数",
-			ToolTip = "如果交互类型是连击触发，则该值决定了连接的次数。"
-		)
+		meta = (DisplayName = "连击次数")
 	)
 	int32 RequiredTaps = 3;
 };
