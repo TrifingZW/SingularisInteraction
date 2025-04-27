@@ -35,11 +35,13 @@ void UInteractionTarget::BeginPlay()
 	Super::BeginPlay();
 
 	for (auto InteractionPrimitive : InteractionPrimitives)
+	{
 		if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InteractionPrimitive.GetComponent(GetOwner())))
 		{
 			PrimitiveComponent->SetCollisionResponseToChannel(ECC_INTERACTABLE, ECR_Block);
 			PrimitiveComponent->ComponentTags.Add(FName("Interaction"));
 		}
+	}
 
 	if (bIsPrompt)
 	{
@@ -85,8 +87,12 @@ void UInteractionTarget::BeginPlay()
 		);
 
 		for (auto HighlightPrimitive : HighlightPrimitives)
+		{
 			if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(HighlightPrimitive.GetComponent(GetOwner())))
+			{
 				HighlightComponent->AddPrimitive(PrimitiveComponent);
+			}
+		}
 	}
 
 	// 准备就绪！
@@ -97,55 +103,91 @@ void UInteractionTarget::TickComponent(const float DeltaTime, const ELevelTick T
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+	{
+		return;
+	}
 
 	if (bInteractionDebugDraw)
+	{
 		if (PromptArea.IsValid())
+		{
 			DrawDebugRange(PromptArea.Get(), PromptArea->ShapeColor, 0.0f);
+		}
+	}
 }
 
 void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint)
 {
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+	{
+		return;
+	}
 
 	if (bInteractionDebugOutput)
 		UE_LOG(LogSingularisInteraction, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
+	{
 		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
+		{
 			OnBeginFocusedEvent.Broadcast(PlayerController, Character, ImpactPoint);
+		}
+	}
 
 	if (bIsHighlight)
+	{
 		if (HighlightComponent)
+		{
 			HighlightComponent->Enable();
+		}
+	}
 }
 
 void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint)
 {
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+	{
+		return;
+	}
 
 	if (bInteractionDebugOutput)
 		UE_LOG(LogSingularisInteraction, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
+	{
 		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
+		{
 			OnEndFocusedEvent.Broadcast(PlayerController, Character, ImpactPoint);
+		}
+	}
 
 	if (bIsHighlight)
+	{
 		if (HighlightComponent)
+		{
 			HighlightComponent->Disable();
+		}
+	}
 }
 
 void UInteractionTarget::OnInteraction_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint, const FInputActionValue& Value)
 {
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+	{
+		return;
+	}
 
 	if (bInteractionDebugOutput)
 		UE_LOG(LogSingularisInteraction, Warning, TEXT("与 %s 的 %s 交互目标交互"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
+	{
 		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
+		{
 			OnInteractionEvent.Broadcast(PlayerController, Character, ImpactPoint, Value);
+		}
+	}
 }
 
 bool UInteractionTarget::IsBlockInteraction() const
@@ -155,7 +197,10 @@ bool UInteractionTarget::IsBlockInteraction() const
 
 void UInteractionTarget::BlockInteraction()
 {
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+	{
+		return;
+	}
 	bBlockInteraction = true;
 
 	if (UUserWidget* Widget = WidgetComponent->GetWidget())
@@ -167,7 +212,10 @@ void UInteractionTarget::BlockInteraction()
 
 void UInteractionTarget::UnlockInteraction()
 {
-	if (!bBlockInteraction) return;
+	if (!bBlockInteraction)
+	{
+		return;
+	}
 	bBlockInteraction = false;
 
 	if (PromptArea.IsValid())
@@ -175,8 +223,12 @@ void UInteractionTarget::UnlockInteraction()
 		TArray<AActor*> OverlappingActors;
 		PromptArea->GetOverlappingActors(OverlappingActors, APawn::StaticClass());
 		if (OverlappingActors.Num() > 0)
+		{
 			if (UUserWidget* Widget = WidgetComponent->GetWidget())
+			{
 				Cast<UInteractionTargetWidget>(Widget)->ShowWidget();
+			}
+		}
 	}
 }
 
@@ -190,7 +242,10 @@ void UInteractionTarget::OnPromptAreaBeginOverlap(
 	const FHitResult& SweepResult
 )
 {
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+	{
+		return;
+	}
 
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
 	{
@@ -198,7 +253,9 @@ void UInteractionTarget::OnPromptAreaBeginOverlap(
 			Controller && Controller->IsLocalPlayerController() && Controller->FindComponentByClass(UInteractionManager::StaticClass()))
 		{
 			if (UUserWidget* Widget = WidgetComponent->GetWidget())
+			{
 				Cast<UInteractionTargetWidget>(Widget)->ShowWidget();
+			}
 
 			OnPlayersEnterPromptAreaEvent.Broadcast(
 				OverlappedComponent,
@@ -220,7 +277,10 @@ void UInteractionTarget::OnPromptRangeAreaOverlap(
 	const int32 OtherBodyIndex
 )
 {
-	if (bBlockInteraction) return;
+	if (bBlockInteraction)
+	{
+		return;
+	}
 
 	if (APawn* Pawn = Cast<APawn>(OtherActor))
 	{
@@ -228,7 +288,9 @@ void UInteractionTarget::OnPromptRangeAreaOverlap(
 			Controller && Controller->IsLocalPlayerController() && Controller->FindComponentByClass(UInteractionManager::StaticClass()))
 		{
 			if (UUserWidget* Widget = WidgetComponent->GetWidget())
+			{
 				Cast<UInteractionTargetWidget>(Widget)->HideWidget();
+			}
 
 			OnPlayerLeavingPromptAreaEvent.Broadcast(
 				OverlappedComponent,
@@ -242,7 +304,10 @@ void UInteractionTarget::OnPromptRangeAreaOverlap(
 
 void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, const FColor Color, const float Duration) const
 {
-	if (!DebugShapeComponent || !GetWorld()) return;
+	if (!DebugShapeComponent || !GetWorld())
+	{
+		return;
+	}
 
 	const FVector Center = DebugShapeComponent->GetComponentLocation();
 	const FQuat Rotation = DebugShapeComponent->GetComponentQuat();

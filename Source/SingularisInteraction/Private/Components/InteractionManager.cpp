@@ -321,19 +321,28 @@ void UInteractionManager::UpdateHintText(const UInteractionTarget* InteractionTa
 void UInteractionManager::CreateInteractionWidget()
 {
 	if (PlayerController.IsValid() && InteractionWidgetClass)
+	{
 		InteractionManagerWidget = CreateWidget<UInteractionManagerWidget>(PlayerController.Get(), InteractionWidgetClass);
+	}
 
 	if (InteractionManagerWidget)
+	{
 		InteractionManagerWidget->AddToViewport(100);
+	}
 }
 
 void UInteractionManager::BindInput()
 {
-	if (!PlayerController.IsValid() || !InteractiveInputMappingContext || !InteractiveInputAction) return;
+	if (!PlayerController.IsValid() || !InteractiveInputMappingContext || !InteractiveInputAction)
+	{
+		return;
+	}
 
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+	{
 		Subsystem->AddMappingContext(InteractiveInputMappingContext, InputPriority);
+	}
 
 	// 绑定输入动作
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
@@ -346,14 +355,19 @@ void UInteractionManager::BindInput()
 // ReSharper disable once CppMemberFunctionMayB eConst
 void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 {
-	if (!CurrentInteractionTarget.IsValid()) return;
+	if (!CurrentInteractionTarget.IsValid())
+	{
+		return;
+	}
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 
 		if (InteractionType == EInteractionType::Press)
+		{
 			ActiveInteractionTarget->Execute_OnInteraction(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
+		}
 
 		if (InteractionType == EInteractionType::Hold)
 		{
@@ -384,7 +398,9 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 		if (InteractionType == EInteractionType::Release)
+		{
 			ActiveInteractionTarget->Execute_OnInteraction(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
+		}
 		IsProgress = false;
 		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 	}
@@ -393,15 +409,23 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 // ReSharper disable once CppMemberFunctionMayBeConst
 void UInteractionManager::HandleHold()
 {
-	if (!CurrentInteractionTarget.IsValid()) return;
+	if (!CurrentInteractionTarget.IsValid())
+	{
+		return;
+	}
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
+	{
 		ActiveInteractionTarget->Execute_OnInteraction(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, {});
+	}
 }
 
 void UInteractionManager::DisableInteraction()
 {
-	if (!bCanInteraction) return;
+	if (!bCanInteraction)
+	{
+		return;
+	}
 
 	bCanInteraction = false;
 	HoldProgress = 0.0f;
@@ -410,41 +434,56 @@ void UInteractionManager::DisableInteraction()
 	GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 
 	if (InteractionManagerWidget)
+	{
 		InteractionManagerWidget->HideProgressBar();
+	}
 }
 
 void UInteractionManager::EnableInteraction()
 {
-	if (bCanInteraction) return;
+	if (bCanInteraction)
+	{
+		return;
+	}
 
 	bCanInteraction = true;
 
 	if (InteractionManagerWidget)
+	{
 		InteractionManagerWidget->ShowWidget();
+	}
 }
 
 void UInteractionManager::ShowInteractionManagerWidget() const
 {
 	if (InteractionManagerWidget)
+	{
 		InteractionManagerWidget->ShowWidget();
+	}
 }
 
 void UInteractionManager::HideInteractionManagerWidget() const
 {
 	if (InteractionManagerWidget)
+	{
 		InteractionManagerWidget->HideWidget();
+	}
 }
 
 void UInteractionManager::EnterSpecialState() const
 {
 	if (InteractionManagerWidget)
+	{
 		InteractionManagerWidget->EnableSpecialState();
+	}
 }
 
 void UInteractionManager::ExitSpecialState() const
 {
 	if (InteractionManagerWidget)
+	{
 		InteractionManagerWidget->DisableSpecialState();
+	}
 }
 
 /*void UInteractionManager::SetInteractionManagerWidget(UInteractionManagerWidget* NewInteractionManagerWidget)

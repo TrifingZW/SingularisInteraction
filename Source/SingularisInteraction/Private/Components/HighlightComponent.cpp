@@ -20,28 +20,42 @@ void UHighlightComponent::BeginPlay()
 	Super::BeginPlay();
 
 	for (auto HighlightPrimitive : HighlightPrimitives)
+	{
 		if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(HighlightPrimitive.GetComponent(GetOwner())))
+		{
 			Primitives.Add(PrimitiveComponent);
+		}
+	}
 }
 
 void UHighlightComponent::AddPrimitive(UPrimitiveComponent* PrimitiveComponent)
 {
-	if (!PrimitiveComponent) return;
+	if (!PrimitiveComponent)
+	{
+		return;
+	}
 
 	Primitives.Add(PrimitiveComponent);
 
 	if (bIsEnabled)
+	{
 		SetPrimitiveHighlight(PrimitiveComponent, true);
+	}
 }
 
 void UHighlightComponent::RemovePrimitive(UPrimitiveComponent* PrimitiveComponent)
 {
-	if (!PrimitiveComponent) return;
+	if (!PrimitiveComponent)
+	{
+		return;
+	}
 
 	Primitives.Remove(PrimitiveComponent);
 
 	if (bIsEnabled)
+	{
 		SetPrimitiveHighlight(PrimitiveComponent, false);
+	}
 }
 
 void UHighlightComponent::ClearPrimitive()
@@ -53,20 +67,31 @@ void UHighlightComponent::ClearPrimitive()
 void UHighlightComponent::Enable()
 {
 	for (const auto PrimitiveComponent : Primitives)
+	{
 		if (PrimitiveComponent.IsValid())
+		{
 			SetPrimitiveHighlight(PrimitiveComponent.Get(), true);
+		}
+	}
 }
 
 void UHighlightComponent::Disable()
 {
 	for (const auto PrimitiveComponent : Primitives)
+	{
 		if (PrimitiveComponent.IsValid())
+		{
 			SetPrimitiveHighlight(PrimitiveComponent.Get(), false);
+		}
+	}
 }
 
 void UHighlightComponent::SetPrimitiveHighlight(UPrimitiveComponent* PrimitiveComponent, const bool bEnable)
 {
-	if (!PrimitiveComponent) return;
+	if (!PrimitiveComponent)
+	{
+		return;
+	}
 
 	PrimitiveComponent->SetRenderCustomDepth(bEnable);
 	PrimitiveComponent->SetCustomDepthStencilValue(bEnable ? 1 : 0);
