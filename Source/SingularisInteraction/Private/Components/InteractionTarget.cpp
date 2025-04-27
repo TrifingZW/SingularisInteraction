@@ -18,6 +18,7 @@
 #include <GameFramework/Character.h>
 #include <GameFramework/Pawn.h>
 
+#include "SingularisInteraction.h"
 #include "Components/HighlightComponent.h"
 #include "Widgets/InteractionTargetWidget.h"
 
@@ -108,7 +109,7 @@ void UInteractionTarget::OnBeginHover_Implementation(AActor* Interactor, const F
 	if (bBlockInteraction) return;
 
 	if (bInteractionDebugOutput)
-		UE_LOG(LogTemp, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
+		UE_LOG(LogSingularisInteraction, Warning, TEXT("开始注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
 		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
@@ -124,7 +125,7 @@ void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor, const FVe
 	if (bBlockInteraction) return;
 
 	if (bInteractionDebugOutput)
-		UE_LOG(LogTemp, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
+		UE_LOG(LogSingularisInteraction, Warning, TEXT("结束注视 %s 的 %s 交互目标"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
 		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
@@ -140,7 +141,7 @@ void UInteractionTarget::OnInteraction_Implementation(AActor* Interactor, const 
 	if (bBlockInteraction) return;
 
 	if (bInteractionDebugOutput)
-		UE_LOG(LogTemp, Warning, TEXT("与 %s 的 %s 交互目标交互"), *GetOwner()->GetName(), *InteractionTitle.ToString());
+		UE_LOG(LogSingularisInteraction, Warning, TEXT("与 %s 的 %s 交互目标交互"), *GetOwner()->GetName(), *InteractionTitle.ToString());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Interactor))
 		if (ACharacter* Character = PlayerController->GetPawn<ACharacter>())
@@ -269,6 +270,6 @@ void UInteractionTarget::DrawDebugRange(UShapeComponent* DebugShapeComponent, co
 	else
 	{
 		// 如果不是已知的形状类型
-		UE_LOG(LogTemp, Warning, TEXT("Unknown shape type!"));
+		UE_LOG(LogSingularisInteraction, Warning, TEXT("Unknown shape type!"));
 	}
 }

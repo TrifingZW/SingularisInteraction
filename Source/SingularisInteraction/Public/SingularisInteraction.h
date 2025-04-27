@@ -11,7 +11,9 @@
 
 #include "Modules/ModuleManager.h"
 
-class FSingularisInteractionModule : public IModuleInterface
+DECLARE_LOG_CATEGORY_EXTERN(LogSingularisInteraction, Log, All);
+
+class FSingularisInteractionModule final : public IModuleInterface
 {
 public:
 	/** IModuleInterface implementation */
