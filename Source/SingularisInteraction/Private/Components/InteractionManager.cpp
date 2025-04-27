@@ -353,7 +353,7 @@ void UInteractionManager::HandleTriggered(const FInputActionValue& Value)
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 
 		if (InteractionType == EInteractionType::Press)
-			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
+			ActiveInteractionTarget->Execute_OnInteraction(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
 
 		if (InteractionType == EInteractionType::Hold)
 		{
@@ -384,7 +384,7 @@ void UInteractionManager::HandleCompleted(const FInputActionValue& Value)
 	{
 		const EInteractionType InteractionType = ActiveInteractionTarget->InteractionConfig.InteractionType;
 		if (InteractionType == EInteractionType::Release)
-			ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
+			ActiveInteractionTarget->Execute_OnInteraction(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, Value);
 		IsProgress = false;
 		GetWorld()->GetTimerManager().ClearTimer(HoldTimerHandle);
 	}
@@ -396,7 +396,7 @@ void UInteractionManager::HandleHold()
 	if (!CurrentInteractionTarget.IsValid()) return;
 
 	if (UInteractionTarget* ActiveInteractionTarget = CurrentInteractionTarget.Get())
-		ActiveInteractionTarget->Execute_OnInteract(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, {});
+		ActiveInteractionTarget->Execute_OnInteraction(ActiveInteractionTarget, GetOwner(), CurrentHitImpactPoint, {});
 }
 
 void UInteractionManager::DisableInteraction()

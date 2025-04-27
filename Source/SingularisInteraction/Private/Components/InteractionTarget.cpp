@@ -135,7 +135,7 @@ void UInteractionTarget::OnEndHover_Implementation(AActor* Interactor, const FVe
 			HighlightComponent->Disable();
 }
 
-void UInteractionTarget::OnInteract_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint, const FInputActionValue& Value)
+void UInteractionTarget::OnInteraction_Implementation(AActor* Interactor, const FVector_NetQuantize ImpactPoint, const FInputActionValue& Value)
 {
 	if (bBlockInteraction) return;
 

@@ -39,5 +39,5 @@ public:
 	void OnEndHover(AActor* Interactor, FVector_NetQuantize ImpactPoint);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "交互接口")
-	void OnInteract(AActor* Interactor, FVector_NetQuantize ImpactPoint, const FInputActionValue& Value);
+	void OnInteraction(AActor* Interactor, FVector_NetQuantize ImpactPoint, const FInputActionValue& Value);
 };

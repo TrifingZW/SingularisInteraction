@@ -298,7 +298,7 @@ public:
 
 	virtual void OnBeginHover_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint) override;
 	virtual void OnEndHover_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint) override;
-	virtual void OnInteract_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint, const FInputActionValue& Value) override;
+	virtual void OnInteraction_Implementation(AActor* Interactor, FVector_NetQuantize ImpactPoint, const FInputActionValue& Value) override;
 
 #pragma endregion
 
